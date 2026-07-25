@@ -20,10 +20,10 @@ step_forward = 0.66
 environment = ExtResource("1_0xm2m")
 
 [node name="Camera3D" type="Camera3D" parent="." unique_id=2067468966]
-transform = Transform3D(0.8191518, -0.24240418, 0.5198371, 0, 0.9063077, 0.42261848, -0.57357687, -0.3461887, 0.74240357, 3.5, 4, 5.5)
+transform = Transform3D(0.8191518, -0.24240418, 0.5198371, 0, 0.9063077, 0.4226185, -0.57357687, -0.3461887, 0.74240357, 3.5, 7.1639996, 5.5)
 projection = 1
 current = true
-size = 8.0
+size = 12.0
 
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=2108176849]
 transform = Transform3D(0.81915206, 0.46984634, -0.32898995, 0, 0.57357645, 0.81915206, 0.57357645, -0.6710101, 0.46984634, 0, 0, 0)
