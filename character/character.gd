@@ -1,6 +1,9 @@
 extends CharacterBody3D
 
 
+const ATTACK_COMBO: Array[StringName] = [&"attack1", &"attack2", &"attack2", &"attack3"]
+
+
 class Leg:
 	var root: Node3D
 	var mesh: MeshInstance3D
@@ -42,10 +45,16 @@ class Leg:
 @export var step_forward := 0.65
 @export var step_duration := 0.12
 @export var step_height := 0.14
+@export var combo_window := 0.2
 
 var next_left := true
+var combo_step := 0
+var attack_buffered := false
+var is_attacking := false
+var is_moving := false
 
 @onready var skin: Node3D = $skin3/blockbench_export
+@onready var model_animations: AnimationPlayer = skin.get_node("AnimationPlayer")
 @onready var left_leg := Leg.new(
 	skin.get_node("root/left_leg"),
 	skin.get_node("root/left_leg/left_leg_mesh"),
@@ -60,13 +69,24 @@ var next_left := true
 )
 
 func _ready() -> void:
+	model_animations.animation_finished.connect(_on_model_animation_finished)
 	_update_leg(left_leg)
 	_update_leg(right_leg)
+	_play_idle_if_needed()
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed(&"attack") and not event.is_echo():
+		_request_attack()
 
 
 func _physics_process(delta: float) -> void:
 	var move_input := Input.get_vector("move_left", "move_right", "move_up", "move_down")
 	var direction := Vector3(move_input.x, 0.0, move_input.y).normalized()
+	is_moving = direction != Vector3.ZERO
+	if is_moving and not is_attacking and model_animations.current_animation == &"idle":
+		model_animations.stop()
+		model_animations.seek(0.0, true)
 	velocity = direction * move_speed
 	move_and_slide()
 
@@ -77,6 +97,52 @@ func _physics_process(delta: float) -> void:
 	_update_leg_step(right_leg, delta)
 	_update_leg(left_leg)
 	_update_leg(right_leg)
+	if not is_attacking:
+		_play_idle_if_needed()
+
+
+func _request_attack() -> void:
+	if not is_attacking:
+		_start_next_attack()
+		return
+	if not attack_buffered and combo_step < ATTACK_COMBO.size() and _is_inside_combo_window():
+		attack_buffered = true
+
+
+func _start_next_attack() -> void:
+	is_attacking = true
+	attack_buffered = false
+	model_animations.play(ATTACK_COMBO[combo_step])
+	combo_step += 1
+
+
+func _on_model_animation_finished(animation_name: StringName) -> void:
+	if animation_name == &"idle":
+		_play_idle_if_needed()
+		return
+	if not ATTACK_COMBO.has(animation_name):
+		return
+	if attack_buffered and combo_step < ATTACK_COMBO.size():
+		_start_next_attack()
+		return
+	is_attacking = false
+	combo_step = 0
+	_play_idle_if_needed()
+
+
+func _play_idle_if_needed() -> void:
+	if not is_moving and not is_attacking and (
+		model_animations.current_animation != &"idle" or not model_animations.is_playing()
+	):
+		model_animations.play(&"idle")
+
+
+func _is_inside_combo_window() -> bool:
+	var animation := model_animations.get_animation(model_animations.current_animation)
+	if animation == null:
+		return false
+	var window_start := maxf(animation.length - combo_window, 0.0)
+	return model_animations.current_animation_position >= window_start
 
 
 func _try_start_step(direction: Vector3) -> void:
