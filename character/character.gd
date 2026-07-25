@@ -52,6 +52,9 @@ var combo_step := 0
 var attack_buffered := false
 var is_attacking := false
 var is_moving := false
+var turning_leg: Leg
+var turn_start_yaw := 0.0
+var turn_target_yaw := 0.0
 
 @onready var skin: Node3D = $skin3/blockbench_export
 @onready var model_animations: AnimationPlayer = skin.get_node("AnimationPlayer")
@@ -153,17 +156,21 @@ func _try_start_step(direction: Vector3) -> void:
 	var should_move_left := _flat_distance(left_leg.target, left_rest) > step_distance
 	var should_move_right := _flat_distance(right_leg.target, right_rest) > step_distance
 	if should_move_left and (next_left or not should_move_right):
-		_start_step(left_leg, left_rest)
+		_start_step(left_leg, left_rest, direction)
 		next_left = false
 	elif should_move_right:
-		_start_step(right_leg, right_rest)
+		_start_step(right_leg, right_rest, direction)
 		next_left = true
 
 
-func _start_step(leg: Leg, destination: Vector3) -> void:
+func _start_step(leg: Leg, destination: Vector3, direction: Vector3) -> void:
 	leg.from = leg.target
 	leg.to = destination
 	leg.progress = 0.0
+	turning_leg = leg
+	turn_start_yaw = rotation.y
+	# The model's face points along its local +X axis.
+	turn_target_yaw = atan2(-direction.z, direction.x)
 
 
 func _update_leg_step(leg: Leg, delta: float) -> void:
@@ -171,7 +178,17 @@ func _update_leg_step(leg: Leg, delta: float) -> void:
 		leg.progress = minf(leg.progress + delta / step_duration, 1.0)
 		leg.target = leg.from.lerp(leg.to, leg.progress)
 		leg.target.y += sin(leg.progress * PI) * step_height
+		_update_turn(leg)
 	leg.boot.global_position = leg.target - leg.boot_to_plant
+
+
+func _update_turn(leg: Leg) -> void:
+	if leg != turning_leg:
+		return
+	var turn_progress := 1.0 - (1.0 - leg.progress) * (1.0 - leg.progress)
+	rotation.y = lerp_angle(turn_start_yaw, turn_target_yaw, turn_progress)
+	if leg.progress >= 1.0:
+		turning_leg = null
 
 
 func _update_leg(leg: Leg) -> void:
