@@ -1,0 +1,29 @@
+[gd_scene format=3 uid="uid://da8sgbng7wcgu"]
+
+[ext_resource type="Environment" uid="uid://cvx82wuvou4v3" path="res://world_env.tres" id="1_0xm2m"]
+[ext_resource type="PackedScene" uid="uid://cj26x0o2ldsuk" path="res://duck/duck.glb" id="1_ig7tw"]
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_ig7tw"]
+size = Vector2(100, 100)
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_apnw2"]
+
+[node name="main" type="Node3D" unique_id=134862043]
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1998564022]
+environment = ExtResource("1_0xm2m")
+
+[node name="Camera3D" type="Camera3D" parent="." unique_id=2067468966]
+transform = Transform3D(-4.371139e-08, -0.42261827, 0.90630776, 0, 0.90630776, 0.42261827, -1, 1.8473232e-08, -3.961597e-08, 4.773, 3.757, 0)
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=28330688]
+mesh = SubResource("PlaneMesh_ig7tw")
+
+[node name="CharacterBody3D" type="CharacterBody3D" parent="." unique_id=1097408588]
+
+[node name="blockbench_export" parent="CharacterBody3D" unique_id=1287838562 instance=ExtResource("1_ig7tw")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5966461, 0)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="CharacterBody3D" unique_id=1885651402]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5966461, 0)
+shape = SubResource("CapsuleShape3D_apnw2")

@@ -1,0 +1,14 @@
+[gd_resource type="StandardMaterial3D" format=3 uid="uid://cmmvw4y837ejb"]
+
+[ext_resource type="Texture2D" uid="uid://bptuvd8bkm6ju" path="res://duck/duck_2.png" id="1_7grxo"]
+
+[resource]
+resource_name = "material_2"
+transparency = 2
+alpha_scissor_threshold = 0.05
+alpha_antialiasing_mode = 0
+cull_mode = 2
+albedo_texture = ExtResource("1_7grxo")
+texture_filter = 0
+texture_repeat = false
+metadata/_gltf_primary_texture_coord = 0
