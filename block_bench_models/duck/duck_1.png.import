@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://cgaoty5awbp0a"
-path="res://.godot/imported/right eye.png-ebe92875efd35b3ad8b1fbcff0fe6c35.ctex"
+uid="uid://wgq4strbbas2"
+path="res://.godot/imported/duck_1.png-6686115b17a7e706a2373f95335847e7.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://block_bench_models/right eye.png"
-dest_files=["res://.godot/imported/right eye.png-ebe92875efd35b3ad8b1fbcff0fe6c35.ctex"]
+source_file="res://block_bench_models/duck/duck_1.png"
+dest_files=["res://.godot/imported/duck_1.png-6686115b17a7e706a2373f95335847e7.ctex"]
 
 [params]
 

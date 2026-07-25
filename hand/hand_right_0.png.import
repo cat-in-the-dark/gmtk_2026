@@ -2,20 +2,20 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://ce0v8cj8vg2in"
-path.s3tc="res://.godot/imported/duck_1.png-0bf4fff693e874805614de14b59390f2.s3tc.ctex"
+uid="uid://bm7cbqbgp57wh"
+path.s3tc="res://.godot/imported/hand_right_0.png-37e0cbe4fad70c13b2c3a4086044387e.s3tc.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc"],
 "vram_texture": true
 }
 generator_parameters={
-"md5": "61b24951e11383841494b8412f32582d"
+"md5": "22f01653808d67648a8144c1c14f4107"
 }
 
 [deps]
 
-source_file="res://block_bench_models/duck_1.png"
-dest_files=["res://.godot/imported/duck_1.png-0bf4fff693e874805614de14b59390f2.s3tc.ctex"]
+source_file="res://hand/hand_right_0.png"
+dest_files=["res://.godot/imported/hand_right_0.png-37e0cbe4fad70c13b2c3a4086044387e.s3tc.ctex"]
 
 [params]
 

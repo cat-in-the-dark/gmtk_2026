@@ -2,20 +2,24 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://qi38m3blmoii"
-path="res://.godot/imported/shtani.png-fd2b65913c0307f3a6defe96e71ca349.ctex"
+uid="uid://dq2wfv7x16vv0"
+path.s3tc="res://.godot/imported/hand_left_0.png-0368b41dc322dbf6eb12e5d73d01c72c.s3tc.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc"],
+"vram_texture": true
+}
+generator_parameters={
+"md5": "22f01653808d67648a8144c1c14f4107"
 }
 
 [deps]
 
-source_file="res://block_bench_models/shtani.png"
-dest_files=["res://.godot/imported/shtani.png-fd2b65913c0307f3a6defe96e71ca349.ctex"]
+source_file="res://hand/hand_left_0.png"
+dest_files=["res://.godot/imported/hand_left_0.png-0368b41dc322dbf6eb12e5d73d01c72c.s3tc.ctex"]
 
 [params]
 
-compress/mode=0
+compress/mode=2
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0
@@ -23,7 +27,7 @@ compress/rdo_quality_loss=0.0
 compress/hdr_compression=1
 compress/normal_map=0
 compress/channel_pack=0
-mipmaps/generate=false
+mipmaps/generate=true
 mipmaps/limit=-1
 roughness/mode=0
 roughness/src_normal=""
@@ -37,4 +41,4 @@ process/normal_map_invert_y=false
 process/hdr_as_srgb=false
 process/hdr_clamp_exposure=false
 process/size_limit=0
-detect_3d/compress_to=1
+detect_3d/compress_to=0

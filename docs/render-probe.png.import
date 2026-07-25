@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://nekug68n86o4"
-path="res://.godot/imported/lips.png-1c37084501d977c068471ea6b8fe3405.ctex"
+uid="uid://te0esa3fcaa8"
+path="res://.godot/imported/render-probe.png-6e5961cb8e5e58725ce6c63af61d8c5e.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://block_bench_models/lips.png"
-dest_files=["res://.godot/imported/lips.png-1c37084501d977c068471ea6b8fe3405.ctex"]
+source_file="res://docs/render-probe.png"
+dest_files=["res://.godot/imported/render-probe.png-6e5961cb8e5e58725ce6c63af61d8c5e.ctex"]
 
 [params]
 
