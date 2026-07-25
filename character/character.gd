@@ -1,27 +1,5 @@
 extends CharacterBody3D
 
-@export var move_speed := 5.5
-@export var step_distance := 0.9
-@export var step_forward := 0.65
-@export var step_duration := 0.12
-@export var step_height := 0.14
-
-@onready var skin: Node3D = $skin3/blockbench_export
-@onready var left_leg := Leg.new(
-	skin.get_node("root/left_leg"),
-	skin.get_node("root/left_leg/left_leg_mesh"),
-	skin.get_node("root/left_leg/left_boot"),
-	skin.get_node("root/left_leg/left_boot/ik_locator_left_boot2")
-)
-@onready var right_leg := Leg.new(
-	skin.get_node("root/right_leg"),
-	skin.get_node("root/right_leg/right_leg_mesh"),
-	skin.get_node("root/right_leg/right_boot"),
-	skin.get_node("root/right_leg/right_boot/ik_locator_right_boot2")
-)
-
-var next_left := true
-
 
 class Leg:
 	var root: Node3D
@@ -36,7 +14,12 @@ class Leg:
 	var to: Vector3
 	var progress := 1.0
 
-	func _init(root_node: Node3D, mesh_node: MeshInstance3D, boot_node: Node3D, plant_node: Node3D) -> void:
+	func _init(
+		root_node: Node3D,
+		mesh_node: MeshInstance3D,
+		boot_node: Node3D,
+		plant_node: Node3D
+	) -> void:
 		root = root_node
 		mesh = mesh_node
 		boot = boot_node
@@ -53,6 +36,28 @@ class Leg:
 		var aabb := mesh_node.get_aabb()
 		return Vector2(aabb.position.y, aabb.end.y)
 
+
+@export var move_speed := 5.5
+@export var step_distance := 0.9
+@export var step_forward := 0.65
+@export var step_duration := 0.12
+@export var step_height := 0.14
+
+var next_left := true
+
+@onready var skin: Node3D = $skin3/blockbench_export
+@onready var left_leg := Leg.new(
+	skin.get_node("root/left_leg"),
+	skin.get_node("root/left_leg/left_leg_mesh"),
+	skin.get_node("root/left_leg/left_boot"),
+	skin.get_node("root/left_leg/left_boot/ik_locator_left_boot2")
+)
+@onready var right_leg := Leg.new(
+	skin.get_node("root/right_leg"),
+	skin.get_node("root/right_leg/right_leg_mesh"),
+	skin.get_node("root/right_leg/right_boot"),
+	skin.get_node("root/right_leg/right_boot/ik_locator_right_boot2")
+)
 
 func _ready() -> void:
 	_update_leg(left_leg)
