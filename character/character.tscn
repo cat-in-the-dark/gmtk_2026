@@ -1,0 +1,29 @@
+[gd_scene format=3 uid="uid://dx25o308d86wc"]
+
+[ext_resource type="PackedScene" uid="uid://d2hpch162j2js" path="res://boot/boot.glb" id="1_hx151"]
+[ext_resource type="PackedScene" uid="uid://cj26x0o2ldsuk" path="res://duck/duck.glb" id="1_l6jsk"]
+[ext_resource type="PackedScene" uid="uid://k080ha71rmye" path="res://hand/hand_right.glb" id="1_ugqs2"]
+[ext_resource type="PackedScene" uid="uid://daxvvnf5s6dw3" path="res://hand/hand_left.glb" id="3_hx151"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_apnw2"]
+
+[node name="Character" type="CharacterBody3D" unique_id=1467132198]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1950720923]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+shape = SubResource("CapsuleShape3D_apnw2")
+
+[node name="skin" type="Node3D" parent="." unique_id=981247854]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+
+[node name="boot_left" parent="skin" unique_id=1741281715 instance=ExtResource("1_hx151")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.84, -0.25)
+
+[node name="boot_right" parent="skin" unique_id=496218783 instance=ExtResource("1_hx151")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.84, 0.25)
+
+[node name="hand_right" parent="skin" unique_id=1805707751 instance=ExtResource("1_ugqs2")]
+
+[node name="body" parent="skin" unique_id=365723311 instance=ExtResource("1_l6jsk")]
+
+[node name="hand_left" parent="skin" unique_id=1109470846 instance=ExtResource("3_hx151")]

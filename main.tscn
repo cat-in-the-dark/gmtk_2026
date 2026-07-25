@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://da8sgbng7wcgu"]
 
 [ext_resource type="Environment" uid="uid://cvx82wuvou4v3" path="res://world_env.tres" id="1_0xm2m"]
-[ext_resource type="PackedScene" uid="uid://cj26x0o2ldsuk" path="res://duck/duck.glb" id="1_ig7tw"]
+[ext_resource type="PackedScene" uid="uid://dx25o308d86wc" path="res://character/character.tscn" id="1_h2yge"]
 
 [sub_resource type="StandardMaterial3D" id="FloorMaterial"]
 albedo_color = Color(0.27451, 0.603922, 0.701961, 1)
@@ -9,18 +9,18 @@ albedo_color = Color(0.27451, 0.603922, 0.701961, 1)
 [sub_resource type="PlaneMesh" id="PlaneMesh_ig7tw"]
 size = Vector2(100, 100)
 
-[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_apnw2"]
-
 [node name="main" type="Node3D" unique_id=134862043]
+
+[node name="Character" parent="." unique_id=1467132198 instance=ExtResource("1_h2yge")]
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1998564022]
 environment = ExtResource("1_0xm2m")
 
 [node name="Camera3D" type="Camera3D" parent="." unique_id=2067468966]
-transform = Transform3D(0.819152, -0.242404, 0.519837, 0, 0.906308, 0.422618, -0.573577, -0.346189, 0.742404, 5, 4, 7)
+transform = Transform3D(0.8191518, -0.24240418, 0.5198371, 0, 0.9063077, 0.42261848, -0.57357687, -0.3461887, 0.74240357, 3.5, 4, 5.5)
 projection = 1
 current = true
-size = 4.2
+size = 8.0
 
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=2108176849]
 transform = Transform3D(0.81915206, 0.46984634, -0.32898995, 0, 0.57357645, 0.81915206, 0.57357645, -0.6710101, 0.46984634, 0, 0, 0)
@@ -32,12 +32,3 @@ directional_shadow_max_distance = 30.0
 [node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=28330688]
 material_override = SubResource("FloorMaterial")
 mesh = SubResource("PlaneMesh_ig7tw")
-
-[node name="CharacterBody3D" type="CharacterBody3D" parent="." unique_id=1097408588]
-
-[node name="blockbench_export" parent="CharacterBody3D" unique_id=1287838562 instance=ExtResource("1_ig7tw")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5966461, 0)
-
-[node name="CollisionShape3D" type="CollisionShape3D" parent="CharacterBody3D" unique_id=1885651402]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5966461, 0)
-shape = SubResource("CapsuleShape3D_apnw2")
