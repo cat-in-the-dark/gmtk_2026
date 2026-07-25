@@ -2,6 +2,7 @@
 
 [ext_resource type="Environment" uid="uid://cvx82wuvou4v3" path="res://world_env.tres" id="1_0xm2m"]
 [ext_resource type="PackedScene" uid="uid://dx25o308d86wc" path="res://character/character.tscn" id="1_h2yge"]
+[ext_resource type="PackedScene" uid="uid://cartgfib48y0f" path="res://box/box.tscn" id="3_h2yge"]
 
 [sub_resource type="StandardMaterial3D" id="FloorMaterial"]
 albedo_color = Color(0.27451, 0.603922, 0.701961, 1)
@@ -35,3 +36,9 @@ directional_shadow_max_distance = 30.0
 [node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=28330688]
 material_override = SubResource("FloorMaterial")
 mesh = SubResource("PlaneMesh_ig7tw")
+
+[node name="box1" parent="." unique_id=1616515310 instance=ExtResource("3_h2yge")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.0013676, 0.6414876, -4.429694)
+
+[node name="box2" parent="." unique_id=1463229619 instance=ExtResource("3_h2yge")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.2621508, 0.6414876, -4.429694)

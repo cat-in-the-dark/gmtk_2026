@@ -55,9 +55,14 @@ var is_moving := false
 var turning_leg: Leg
 var turn_start_yaw := 0.0
 var turn_target_yaw := 0.0
+var hit_bodies: Dictionary = {}
 
 @onready var skin: Node3D = $skin3/blockbench_export
 @onready var model_animations: AnimationPlayer = skin.get_node("AnimationPlayer")
+@onready var hand_hit_areas: Array[Area3D] = [
+	skin.get_node("root/arm_left/hand_left/hand_left_mesh/Area3D"),
+	skin.get_node("root/arm_right/hand_right/hand_right_mesh/Area3D")
+]
 @onready var left_leg := Leg.new(
 	skin.get_node("root/left_leg"),
 	skin.get_node("root/left_leg/left_leg_mesh"),
@@ -93,13 +98,14 @@ func _physics_process(delta: float) -> void:
 	velocity = direction * move_speed
 	move_and_slide()
 
-	if direction != Vector3.ZERO:
+	if direction != Vector3.ZERO and not is_attacking:
 		_try_start_step(direction)
 
 	_update_leg_step(left_leg, delta)
 	_update_leg_step(right_leg, delta)
 	_update_leg(left_leg)
 	_update_leg(right_leg)
+	_check_attack_hits()
 	if not is_attacking:
 		_play_idle_if_needed()
 
@@ -115,6 +121,7 @@ func _request_attack() -> void:
 func _start_next_attack() -> void:
 	is_attacking = true
 	attack_buffered = false
+	hit_bodies.clear()
 	model_animations.play(ATTACK_COMBO[combo_step])
 	combo_step += 1
 
@@ -138,6 +145,19 @@ func _play_idle_if_needed() -> void:
 		model_animations.current_animation != &"idle" or not model_animations.is_playing()
 	):
 		model_animations.play(&"idle")
+
+
+func _check_attack_hits() -> void:
+	if not is_attacking:
+		return
+	for hit_area in hand_hit_areas:
+		for body in hit_area.get_overlapping_bodies():
+			var body_id := body.get_instance_id()
+			if hit_bodies.has(body_id):
+				continue
+			hit_bodies[body_id] = true
+			if body.has_method("hit"):
+				body.hit()
 
 
 func _is_inside_combo_window() -> bool:
