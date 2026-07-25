@@ -3,6 +3,9 @@
 [ext_resource type="Environment" uid="uid://cvx82wuvou4v3" path="res://world_env.tres" id="1_0xm2m"]
 [ext_resource type="PackedScene" uid="uid://cj26x0o2ldsuk" path="res://duck/duck.glb" id="1_ig7tw"]
 
+[sub_resource type="StandardMaterial3D" id="FloorMaterial"]
+albedo_color = Color(0.27451, 0.603922, 0.701961, 1)
+
 [sub_resource type="PlaneMesh" id="PlaneMesh_ig7tw"]
 size = Vector2(100, 100)
 
@@ -14,9 +17,20 @@ size = Vector2(100, 100)
 environment = ExtResource("1_0xm2m")
 
 [node name="Camera3D" type="Camera3D" parent="." unique_id=2067468966]
-transform = Transform3D(-4.371139e-08, -0.42261827, 0.90630776, 0, 0.90630776, 0.42261827, -1, 1.8473232e-08, -3.961597e-08, 4.773, 3.757, 0)
+transform = Transform3D(0.819152, -0.242404, 0.519837, 0, 0.906308, 0.422618, -0.573577, -0.346189, 0.742404, 5, 4, 7)
+projection = 1
+current = true
+size = 4.2
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=2108176849]
+transform = Transform3D(0.81915206, 0.46984634, -0.32898995, 0, 0.57357645, 0.81915206, 0.57357645, -0.6710101, 0.46984634, 0, 0, 0)
+light_color = Color(0.8, 0.9, 1, 1)
+light_energy = 1.1
+shadow_enabled = true
+directional_shadow_max_distance = 30.0
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=28330688]
+material_override = SubResource("FloorMaterial")
 mesh = SubResource("PlaneMesh_ig7tw")
 
 [node name="CharacterBody3D" type="CharacterBody3D" parent="." unique_id=1097408588]
