@@ -45,7 +45,7 @@ class Leg:
 @export var step_forward := 0.65
 @export var step_duration := 0.12
 @export var step_height := 0.14
-@export var knockback_speed := 8.0
+@export var knockback_speed := 15.0
 @export var knockback_drag := 22.0
 
 var move_direction := Vector3.ZERO
@@ -53,6 +53,9 @@ var is_attacking := false
 var is_hit := false
 var active_attack := &"" as StringName
 var knockback_velocity := Vector3.ZERO
+var bounce_time_left := 0.0
+var bounce_duration := 0.0
+var skin_rest_position := Vector3.ZERO
 var next_left := true
 var turning_leg: Leg
 var turn_start_yaw := 0.0
@@ -80,6 +83,7 @@ var hit_bodies: Dictionary = {}
 
 
 func _ready() -> void:
+	skin_rest_position = skin.position
 	model_animations.animation_finished.connect(_on_model_animation_finished)
 	_update_leg(left_leg)
 	_update_leg(right_leg)
@@ -91,10 +95,14 @@ func _physics_process(delta: float) -> void:
 	if is_moving and not is_busy() and model_animations.current_animation == &"idle":
 		model_animations.stop()
 		model_animations.seek(0.0, true)
-	var controlled_velocity := Vector3.ZERO if is_hit else move_direction * move_speed
+	var was_knocked_back := _is_knocked_back()
+	var controlled_velocity := Vector3.ZERO if is_busy() else move_direction * move_speed
 	velocity = controlled_velocity + knockback_velocity
 	move_and_slide()
 	knockback_velocity = knockback_velocity.move_toward(Vector3.ZERO, knockback_drag * delta)
+	_update_knockback_bounce(delta)
+	if was_knocked_back or _is_knocked_back():
+		_sync_feet_to_body()
 	if is_moving and not is_busy():
 		_try_start_step(move_direction)
 	_update_leg_step(left_leg, delta)
@@ -107,7 +115,7 @@ func _physics_process(delta: float) -> void:
 
 
 func is_busy() -> bool:
-	return is_attacking or is_hit
+	return is_attacking or is_hit or _is_knocked_back()
 
 
 func start_attack(animation_name: StringName) -> bool:
@@ -120,19 +128,32 @@ func start_attack(animation_name: StringName) -> bool:
 	return true
 
 
-func receive_hit(attacker_position: Vector3) -> void:
-	if is_hit:
+func receive_hit(attacker_position: Vector3, _attack_name: StringName = &"") -> void:
+	_start_hit(attacker_position, true)
+
+
+func _start_hit(
+	attacker_position: Vector3,
+	should_knockback: bool,
+	allow_restart := false,
+	should_bounce := false
+) -> void:
+	if (is_hit or _is_knocked_back()) and not allow_restart:
 		return
 	if is_attacking:
 		_on_attack_interrupted()
 	is_attacking = false
 	is_hit = true
 	active_attack = &""
-	var away := global_position - attacker_position
-	away.y = 0.0
-	if away.length_squared() < 0.001:
-		away = Vector3.RIGHT.rotated(Vector3.UP, rotation.y)
-	knockback_velocity = away.normalized() * knockback_speed
+	if should_knockback:
+		var away := global_position - attacker_position
+		away.y = 0.0
+		if away.length_squared() < 0.001:
+			away = Vector3.RIGHT.rotated(Vector3.UP, rotation.y)
+		knockback_velocity = away.normalized() * knockback_speed
+	if should_bounce:
+		bounce_duration = 0.5
+		bounce_time_left = bounce_duration
 	model_animations.play(&"hit")
 
 
@@ -191,7 +212,7 @@ func _check_attack_hits() -> void:
 				continue
 			hit_bodies[body_id] = true
 			if body.has_method("receive_hit"):
-				body.receive_hit(global_position)
+				body.receive_hit(global_position, active_attack)
 			elif body.has_method("hit"):
 				body.hit()
 
@@ -253,3 +274,26 @@ func _update_leg(leg: Leg) -> void:
 
 func _flat_distance(a: Vector3, b: Vector3) -> float:
 	return Vector2(a.x - b.x, a.z - b.z).length()
+
+
+func _is_knocked_back() -> bool:
+	return knockback_velocity.length_squared() > 0.001 or bounce_time_left > 0.0
+
+
+func _sync_feet_to_body() -> void:
+	for leg in [left_leg, right_leg]:
+		leg.target = leg.boot.global_position + leg.boot_to_plant
+		leg.from = leg.target
+		leg.to = leg.target
+		leg.progress = 1.0
+
+
+func _update_knockback_bounce(delta: float) -> void:
+	if bounce_time_left <= 0.0:
+		return
+	bounce_time_left = maxf(bounce_time_left - delta, 0.0)
+	var progress := 1.0 - bounce_time_left / bounce_duration
+	var height := absf(sin(progress * TAU)) * lerpf(0.28, 0.08, progress)
+	skin.position = skin_rest_position + Vector3.UP * height
+	if bounce_time_left <= 0.0:
+		skin.position = skin_rest_position

@@ -37,8 +37,9 @@ func _physics_process(delta: float) -> void:
 	super._physics_process(delta)
 
 
-func receive_hit(attacker_position: Vector3) -> void:
-	super.receive_hit(attacker_position)
+func receive_hit(attacker_position: Vector3, attack_name: StringName = &"") -> void:
+	var is_strong_attack := attack_name == &"attack3"
+	_start_hit(attacker_position, is_strong_attack, true, is_strong_attack)
 	attack_at = -1.0
 
 

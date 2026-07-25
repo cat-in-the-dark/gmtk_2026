@@ -5,4 +5,4 @@
 
 [node name="Enemy" instance=ExtResource("1_base")]
 script = ExtResource("2_enemy")
-move_speed = 4.2
+move_speed = 1.5
