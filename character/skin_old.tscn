@@ -1,0 +1,21 @@
+[gd_scene format=3 uid="uid://mspjlt6bxhm5"]
+
+[ext_resource type="PackedScene" uid="uid://d2hpch162j2js" path="res://boot/boot.glb" id="1_6u2s7"]
+[ext_resource type="PackedScene" uid="uid://k080ha71rmye" path="res://hand/hand_right.glb" id="2_lf6vp"]
+[ext_resource type="PackedScene" uid="uid://cj26x0o2ldsuk" path="res://duck/duck.glb" id="3_um1h3"]
+[ext_resource type="PackedScene" uid="uid://daxvvnf5s6dw3" path="res://hand/hand_left.glb" id="4_iafgl"]
+
+[node name="skin" type="Node3D" unique_id=2114581006]
+visible = false
+
+[node name="boot_left" parent="." unique_id=253999411 instance=ExtResource("1_6u2s7")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.84, -0.25)
+
+[node name="boot_right" parent="." unique_id=710238166 instance=ExtResource("1_6u2s7")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.84, 0.25)
+
+[node name="hand_right" parent="." unique_id=1796049256 instance=ExtResource("2_lf6vp")]
+
+[node name="body" parent="." unique_id=365723311 instance=ExtResource("3_um1h3")]
+
+[node name="hand_left" parent="." unique_id=1796522293 instance=ExtResource("4_iafgl")]

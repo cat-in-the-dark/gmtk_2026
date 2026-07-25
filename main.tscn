@@ -12,6 +12,9 @@ size = Vector2(100, 100)
 [node name="main" type="Node3D" unique_id=134862043]
 
 [node name="Character" parent="." unique_id=1467132198 instance=ExtResource("1_h2yge")]
+move_speed = 6.0
+step_distance = 1.26
+step_forward = 0.66
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1998564022]
 environment = ExtResource("1_0xm2m")

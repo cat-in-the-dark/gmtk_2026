@@ -2,8 +2,8 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://btr4n8nn0yksb"
-path.s3tc="res://.godot/imported/duck_1.png-272c12bc23aecf9758f6d8c31fd7c6d8.s3tc.ctex"
+uid="uid://d4pd6h784pdb"
+path.s3tc="res://.godot/imported/duck_3.png-b92cd44726987ce52af406d08098d6a7.s3tc.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc"],
 "vram_texture": true
@@ -14,8 +14,8 @@ generator_parameters={
 
 [deps]
 
-source_file="res://duck/duck_1.png"
-dest_files=["res://.godot/imported/duck_1.png-272c12bc23aecf9758f6d8c31fd7c6d8.s3tc.ctex"]
+source_file="res://duck2/duck_3.png"
+dest_files=["res://.godot/imported/duck_3.png-b92cd44726987ce52af406d08098d6a7.s3tc.ctex"]
 
 [params]
 
