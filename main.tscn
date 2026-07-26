@@ -6,6 +6,7 @@
 [ext_resource type="PackedScene" uid="uid://cyscod0sjv43a" path="res://enemy.tscn" id="4_enemy"]
 [ext_resource type="Script" uid="uid://bknjhtpkrcxph" path="res://enemy_spawner.gd" id="5_spawner"]
 [ext_resource type="FontFile" uid="uid://cnrtfdru4342r" path="res://fonts/deltarune.ttf" id="6_7mycd"]
+[ext_resource type="Material" uid="uid://dc14maoctjf85" path="res://floor/floor.tres" id="6_272bh"]
 
 [sub_resource type="WorldBoundaryShape3D" id="WorldBoundaryShape3D_lquwl"]
 
@@ -58,6 +59,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -5, 0)
 shape = SubResource("WorldBoundaryShape3D_lquwl")
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="Floor" unique_id=28330688]
+visible = false
 material_override = SubResource("FloorMaterial")
 mesh = SubResource("PlaneMesh_ig7tw")
 
@@ -83,6 +85,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -4, 0)
 shape = SubResource("BoxShape3D_apnw2")
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="level/platform1" unique_id=1513292004]
+material_override = ExtResource("6_272bh")
 mesh = SubResource("BoxMesh_apnw2")
 
 [node name="EnemyCounter" type="Label3D" parent="level" unique_id=290163380]
