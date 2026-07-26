@@ -1,0 +1,48 @@
+[gd_scene format=3 uid="uid://dghasttpldypd"]
+
+[ext_resource type="Environment" uid="uid://cvx82wuvou4v3" path="res://world_env.tres" id="1_4nh4k"]
+[ext_resource type="PackedScene" uid="uid://bx0bt2mq2jr51" path="res://frog/frog.glb" id="1_tpdqf"]
+[ext_resource type="Script" path="res://gameover/gameover.gd" id="2_script"]
+[ext_resource type="FontFile" uid="uid://cnrtfdru4342r" path="res://fonts/deltarune.ttf" id="3_font"]
+
+[node name="Gameover" type="Node3D" unique_id=203478475]
+script = ExtResource("2_script")
+
+[node name="frog" parent="." unique_id=1018753583 instance=ExtResource("1_tpdqf")]
+transform = Transform3D(0.7071067, 0, -0.7071067, 0, 1, 0, 0.7071067, 0, 0.7071067, 0, 5.05, -4)
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=322808676]
+environment = ExtResource("1_4nh4k")
+
+[node name="Camera3D" type="Camera3D" parent="." unique_id=91002681]
+transform = Transform3D(1, 0, 0, 0, 0.9063078, 0.4226183, 0, -0.4226183, 0.9063078, 0, 9, 3.93)
+projection = 1
+current = true
+size = 6.0
+
+[node name="GameOverLabel" type="Label3D" parent="." unique_id=1271082283]
+position = Vector3(0, 7.8, -4)
+billboard = 1
+text = "GAME OVER"
+font = ExtResource("3_font")
+font_size = 192
+outline_size = 32
+
+[node name="Interface" type="CanvasLayer" parent="."]
+
+[node name="RestartLabel" type="Label" parent="Interface"]
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -32.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_colors/font_color = Color(0.8, 1, 0.3, 1)
+theme_override_colors/font_outline_color = Color(0.03, 0.05, 0.11, 1)
+theme_override_constants/outline_size = 2
+theme_override_fonts/font = ExtResource("3_font")
+theme_override_font_sizes/font_size = 10
+text = "Press ESC to restart"
+horizontal_alignment = 1
+vertical_alignment = 1

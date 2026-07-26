@@ -52,7 +52,10 @@ func receive_hit(attacker_position: Vector3, attack_name: StringName = &"") -> v
 
 
 func _on_reached_kill_floor() -> void:
-	get_tree().call_deferred(&"reload_current_scene")
+	get_tree().call_deferred(
+		&"change_scene_to_file",
+		"res://gameover/gameover.tscn"
+	)
 
 
 func _request_attack() -> void:

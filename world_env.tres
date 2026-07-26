@@ -1,4 +1,4 @@
-[gd_resource type="Environment" load_steps=2 format=3 uid="uid://cvx82wuvou4v3"]
+[gd_resource type="Environment" format=3 uid="uid://cvx82wuvou4v3"]
 
 [ext_resource type="Sky" uid="uid://r5xeigeohfnk" path="res://sky/sky.tres" id="1_sky"]
 
@@ -8,5 +8,3 @@ sky = ExtResource("1_sky")
 ambient_light_source = 2
 ambient_light_color = Color(0.72, 0.9, 1, 1)
 ambient_light_energy = 0.8
-tonemap_mode = 0
-glow_enabled = false
