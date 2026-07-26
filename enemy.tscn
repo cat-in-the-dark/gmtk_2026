@@ -6,8 +6,7 @@
 [node name="Enemy" unique_id=950568139 groups=["enemies"] instance=ExtResource("1_base")]
 script = ExtResource("2_enemy")
 attack_range = 1.7
-attack_jitter_min = 0.2
-attack_jitter_max = 0.55
+attack_charge_duration = 0.5
 domino_area_scale = 1.5
 stun_duration = 1.5
 move_speed = 1

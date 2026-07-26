@@ -1,8 +1,7 @@
 extends Fighter
 
 @export var attack_range := 1.7
-@export var attack_jitter_min := 0.2
-@export var attack_jitter_max := 0.55
+@export var attack_charge_duration := 0.5
 @export var domino_area_scale := 1.5
 @export var stun_duration := 1.5
 @export var can_dash := false
@@ -13,7 +12,8 @@ extends Fighter
 @export var dash_cooldown_jitter := 0.75
 
 var target: Node3D
-var attack_at := -1.0
+var is_charging_attack := false
+var attack_charge_time_left := 0.0
 var stun_time_left := 0.0
 var is_dashing := false
 var dash_time_left := 0.0
@@ -35,6 +35,9 @@ func _ready() -> void:
 	var stunned_animation := model_animations.get_animation(&"stunned")
 	if stunned_animation != null:
 		stunned_animation.loop_mode = Animation.LOOP_LINEAR
+	var charge_animation := model_animations.get_animation(&"attack_charge")
+	if charge_animation != null:
+		charge_animation.loop_mode = Animation.LOOP_NONE
 	target = get_tree().get_first_node_in_group("player") as Node3D
 
 
@@ -46,27 +49,23 @@ func _physics_process(delta: float) -> void:
 	if not is_on_floor():
 		if is_dashing:
 			_finish_dash()
+		if is_charging_attack:
+			_cancel_attack_charge()
 		move_direction = Vector3.ZERO
-		attack_at = -1.0
+	elif is_charging_attack:
+		move_direction = Vector3.ZERO
+		_update_attack_charge(delta)
 	elif target != null and not is_busy():
 		var offset := target.global_position - global_position
 		offset.y = 0.0
-		if _try_start_dash(offset):
-			move_direction = Vector3.ZERO
-			attack_at = -1.0
-		elif offset.length() > attack_range:
-			move_direction = offset.normalized()
-			attack_at = -1.0
-		else:
+		if offset.length() <= attack_range:
 			move_direction = Vector3.ZERO
 			face_direction(offset)
-			if attack_at < 0.0:
-				attack_at = Time.get_ticks_msec() * 0.001 + randf_range(
-					attack_jitter_min, attack_jitter_max
-				)
-			elif Time.get_ticks_msec() * 0.001 >= attack_at:
-				attack_at = -1.0
-				start_attack(&"attack1")
+			_start_attack_charge()
+		elif _try_start_dash(offset):
+			move_direction = Vector3.ZERO
+		else:
+			move_direction = offset.normalized()
 	else:
 		move_direction = Vector3.ZERO
 	super._physics_process(delta)
@@ -83,23 +82,31 @@ func _physics_process(delta: float) -> void:
 
 
 func is_busy() -> bool:
-	return super.is_busy() or stun_time_left > 0.0 or is_dashing
+	return (
+		super.is_busy()
+		or is_charging_attack
+		or stun_time_left > 0.0
+		or is_dashing
+	)
 
 
 func receive_hit(attacker_position: Vector3, attack_name: StringName = &"") -> void:
 	if is_dashing:
 		_finish_dash()
+	if is_charging_attack:
+		_cancel_attack_charge()
 	var is_strong_attack := attack_name == &"attack3"
 	if is_strong_attack:
 		_start_domino_knockback(attacker_position)
 	else:
 		_start_hit(attacker_position, false, true)
-	attack_at = -1.0
 
 
 func receive_domino_hit(attacker_position: Vector3, source_enemy: Node) -> void:
 	if is_dashing:
 		_finish_dash()
+	if is_charging_attack:
+		_cancel_attack_charge()
 	_start_domino_knockback(attacker_position, source_enemy, false)
 
 
@@ -115,7 +122,6 @@ func _start_domino_knockback(
 	if source_enemy != null:
 		domino_hit_bodies[source_enemy.get_instance_id()] = true
 	_start_hit(attacker_position, true, true, true)
-	attack_at = -1.0
 
 
 func _spread_domino_knockback() -> void:
@@ -134,6 +140,26 @@ func _spread_domino_knockback() -> void:
 		domino_hit_bodies[body_id] = true
 		if body.has_method("receive_domino_hit"):
 			body.receive_domino_hit(global_position, self)
+
+
+func _start_attack_charge() -> void:
+	is_charging_attack = true
+	attack_charge_time_left = attack_charge_duration
+	model_animations.play(&"attack_charge")
+
+
+func _update_attack_charge(delta: float) -> void:
+	attack_charge_time_left = maxf(attack_charge_time_left - delta, 0.0)
+	if attack_charge_time_left > 0.0:
+		return
+	is_charging_attack = false
+	if not start_attack(&"attack1"):
+		_cancel_attack_charge()
+
+
+func _cancel_attack_charge() -> void:
+	is_charging_attack = false
+	attack_charge_time_left = 0.0
 
 
 func _try_start_dash(offset: Vector3) -> bool:
@@ -208,7 +234,3 @@ func _update_stunned_animation() -> void:
 
 func _can_attack_body(body: Node) -> bool:
 	return not body.is_in_group(&"enemies")
-
-
-func _on_attack_interrupted() -> void:
-	attack_at = -1.0
