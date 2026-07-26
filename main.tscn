@@ -7,6 +7,7 @@
 [ext_resource type="Script" uid="uid://bknjhtpkrcxph" path="res://enemy_spawner.gd" id="5_spawner"]
 [ext_resource type="FontFile" uid="uid://cnrtfdru4342r" path="res://fonts/deltarune.ttf" id="6_7mycd"]
 [ext_resource type="Material" uid="uid://dc14maoctjf85" path="res://floor/floor.tres" id="6_272bh"]
+[ext_resource type="Script" path="res://main.gd" id="7_main"]
 
 [sub_resource type="WorldBoundaryShape3D" id="WorldBoundaryShape3D_lquwl"]
 
@@ -23,6 +24,7 @@ size = Vector3(12, 8, 12)
 size = Vector3(12, 8, 12)
 
 [node name="main" type="Node3D" unique_id=134862043]
+script = ExtResource("7_main")
 
 [node name="EnemySpawner" type="Node" parent="." unique_id=5866840]
 script = ExtResource("5_spawner")
