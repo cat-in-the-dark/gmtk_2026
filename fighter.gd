@@ -54,6 +54,8 @@ var is_attacking := false
 var is_hit := false
 var active_attack := &"" as StringName
 var knockback_velocity := Vector3.ZERO
+var forced_movement_active := false
+var forced_movement_velocity := Vector3.ZERO
 var bounce_time_left := 0.0
 var bounce_duration := 0.0
 var skin_rest_position := Vector3.ZERO
@@ -104,7 +106,9 @@ func _physics_process(delta: float) -> void:
 	else:
 		vertical_velocity += get_gravity().y * gravity_scale * delta
 	var controlled_velocity := Vector3.ZERO
-	if not is_busy():
+	if forced_movement_active:
+		controlled_velocity = forced_movement_velocity
+	elif not is_busy():
 		if was_on_floor:
 			controlled_velocity = move_direction * move_speed
 		else:
@@ -114,9 +118,15 @@ func _physics_process(delta: float) -> void:
 	move_and_slide()
 	knockback_velocity = knockback_velocity.move_toward(Vector3.ZERO, knockback_drag * delta)
 	_update_knockback_bounce(delta)
-	if was_knocked_back or _is_knocked_back() or not was_on_floor or not is_on_floor():
+	if (
+		was_knocked_back
+		or _is_knocked_back()
+		or forced_movement_active
+		or not was_on_floor
+		or not is_on_floor()
+	):
 		_sync_feet_to_body()
-	if is_moving and not is_busy() and is_on_floor():
+	if is_moving and not is_busy() and not forced_movement_active and is_on_floor():
 		_try_start_step(move_direction)
 	_update_leg_step(left_leg, delta)
 	_update_leg_step(right_leg, delta)

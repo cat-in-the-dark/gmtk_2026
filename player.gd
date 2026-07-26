@@ -3,9 +3,15 @@ extends Fighter
 const ATTACK_COMBO: Array[StringName] = [&"attack1", &"attack2", &"attack2", &"attack3"]
 
 @export var combo_window := 0.2
+@export var dash_speed := 16.0
+@export var dash_duration := 0.18
+@export var dash_cooldown := 0.3
 
 var combo_step := 0
 var attack_buffered := false
+var is_dashing := false
+var dash_time_left := 0.0
+var dash_cooldown_left := 0.0
 
 
 func _ready() -> void:
@@ -16,12 +22,28 @@ func _ready() -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed(&"attack") and not event.is_echo():
 		_request_attack()
+	elif event.is_action_pressed(&"dash") and not event.is_echo():
+		_request_dash()
 
 
 func _physics_process(delta: float) -> void:
-	var input := Input.get_vector("move_left", "move_right", "move_up", "move_down")
-	move_direction = Vector3(input.x, 0.0, input.y).normalized()
+	move_direction = _get_input_direction()
 	super._physics_process(delta)
+	dash_cooldown_left = maxf(dash_cooldown_left - delta, 0.0)
+	if is_dashing:
+		dash_time_left = maxf(dash_time_left - delta, 0.0)
+		if dash_time_left <= 0.0:
+			_finish_dash()
+
+
+func is_busy() -> bool:
+	return super.is_busy() or is_dashing
+
+
+func receive_hit(attacker_position: Vector3, attack_name: StringName = &"") -> void:
+	if is_dashing:
+		_finish_dash()
+	super.receive_hit(attacker_position, attack_name)
 
 
 func _request_attack() -> void:
@@ -29,6 +51,31 @@ func _request_attack() -> void:
 		_start_next_attack()
 	elif not attack_buffered and combo_step < ATTACK_COMBO.size() and _is_inside_combo_window():
 		attack_buffered = true
+
+
+func _request_dash() -> void:
+	if is_busy() or not is_on_floor() or dash_cooldown_left > 0.0:
+		return
+	var direction := _get_input_direction()
+	if direction == Vector3.ZERO:
+		direction = Vector3.RIGHT.rotated(Vector3.UP, rotation.y)
+	is_dashing = true
+	dash_time_left = dash_duration
+	dash_cooldown_left = dash_duration + dash_cooldown
+	forced_movement_active = true
+	forced_movement_velocity = direction * dash_speed
+	model_animations.play(&"stunned")
+
+
+func _finish_dash() -> void:
+	is_dashing = false
+	dash_time_left = 0.0
+	forced_movement_active = false
+	forced_movement_velocity = Vector3.ZERO
+	velocity.x = 0.0
+	velocity.z = 0.0
+	if model_animations.assigned_animation == &"stunned":
+		model_animations.play(&"idle")
 
 
 func _start_next_attack() -> void:
@@ -55,3 +102,8 @@ func _is_inside_combo_window() -> bool:
 	if animation == null:
 		return false
 	return model_animations.current_animation_position >= maxf(animation.length - combo_window, 0.0)
+
+
+func _get_input_direction() -> Vector3:
+	var input := Input.get_vector("move_left", "move_right", "move_up", "move_down")
+	return Vector3(input.x, 0.0, input.y).normalized()
