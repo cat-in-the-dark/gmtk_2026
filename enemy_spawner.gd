@@ -7,6 +7,7 @@ extends Node
 @export_range(1, 100, 1) var total_enemy_count := 10
 @export var opening_wave_sizes: Array[int] = [1, 2, 3, 4]
 @export_range(1, 20, 1) var repeating_wave_size := 6
+@export_range(1, 100, 1) var dash_enabled_from_wave := 3
 
 var platform: StaticBody3D
 var platform_box: BoxShape3D
@@ -44,10 +45,12 @@ func _spawn_next_wave() -> void:
 	if wave_index < opening_wave_sizes.size():
 		desired_wave_size = opening_wave_sizes[wave_index]
 	var wave_size := mini(maxi(desired_wave_size, 1), remaining)
+	var wave_can_dash := wave_index + 1 >= dash_enabled_from_wave
 	wave_index += 1
 	current_wave_alive_count = wave_size
 	for _enemy_index in wave_size:
 		var enemy := enemy_scene.instantiate() as Fighter
+		enemy.set("can_dash", wave_can_dash)
 		enemy.eliminated.connect(_on_spawned_enemy_eliminated)
 		get_parent().add_child(enemy, true)
 		enemy.global_position = _get_spawn_position()

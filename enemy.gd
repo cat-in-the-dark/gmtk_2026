@@ -4,11 +4,21 @@ extends Fighter
 @export var attack_jitter_min := 0.2
 @export var attack_jitter_max := 0.55
 @export var domino_area_scale := 1.5
-@export var stun_duration := 2.0
+@export var stun_duration := 1.5
+@export var can_dash := false
+@export_range(0.0, 1.0, 0.05) var dash_chance := 0.3
+@export var dash_speed := 12.0
+@export_range(0.05, 1.0, 0.01) var dash_duration := 0.18
+@export var dash_cooldown := 2.5
+@export var dash_cooldown_jitter := 0.75
 
 var target: Node3D
 var attack_at := -1.0
 var stun_time_left := 0.0
+var is_dashing := false
+var dash_time_left := 0.0
+var dash_cooldown_left := 0.0
+var dash_direction := Vector3.ZERO
 var domino_knockback_active := false
 var domino_hit_bodies: Dictionary = {}
 var domino_proximity_shape: CapsuleShape3D
@@ -30,15 +40,21 @@ func _ready() -> void:
 
 func _physics_process(delta: float) -> void:
 	_update_stun(delta)
+	_update_dash_before_movement(delta)
 	if target == null:
 		target = get_tree().get_first_node_in_group("player") as Node3D
 	if not is_on_floor():
+		if is_dashing:
+			_finish_dash()
 		move_direction = Vector3.ZERO
 		attack_at = -1.0
 	elif target != null and not is_busy():
 		var offset := target.global_position - global_position
 		offset.y = 0.0
-		if offset.length() > attack_range:
+		if _try_start_dash(offset):
+			move_direction = Vector3.ZERO
+			attack_at = -1.0
+		elif offset.length() > attack_range:
 			move_direction = offset.normalized()
 			attack_at = -1.0
 		else:
@@ -54,6 +70,10 @@ func _physics_process(delta: float) -> void:
 	else:
 		move_direction = Vector3.ZERO
 	super._physics_process(delta)
+	if is_dashing and not is_on_floor():
+		_finish_dash()
+	else:
+		_update_dash_after_movement(delta)
 	if domino_knockback_active:
 		_spread_domino_knockback()
 		if not _is_knocked_back():
@@ -63,10 +83,12 @@ func _physics_process(delta: float) -> void:
 
 
 func is_busy() -> bool:
-	return super.is_busy() or stun_time_left > 0.0
+	return super.is_busy() or stun_time_left > 0.0 or is_dashing
 
 
 func receive_hit(attacker_position: Vector3, attack_name: StringName = &"") -> void:
+	if is_dashing:
+		_finish_dash()
 	var is_strong_attack := attack_name == &"attack3"
 	if is_strong_attack:
 		_start_domino_knockback(attacker_position)
@@ -76,6 +98,8 @@ func receive_hit(attacker_position: Vector3, attack_name: StringName = &"") -> v
 
 
 func receive_domino_hit(attacker_position: Vector3, source_enemy: Node) -> void:
+	if is_dashing:
+		_finish_dash()
 	_start_domino_knockback(attacker_position, source_enemy, false)
 
 
@@ -110,6 +134,55 @@ func _spread_domino_knockback() -> void:
 		domino_hit_bodies[body_id] = true
 		if body.has_method("receive_domino_hit"):
 			body.receive_domino_hit(global_position, self)
+
+
+func _try_start_dash(offset: Vector3) -> bool:
+	if not can_dash or dash_cooldown_left > 0.0:
+		return false
+	dash_cooldown_left = maxf(
+		dash_cooldown + randf_range(-dash_cooldown_jitter, dash_cooldown_jitter),
+		0.1
+	)
+	if randf() >= dash_chance:
+		return false
+	dash_direction = offset.normalized()
+	if dash_direction == Vector3.ZERO:
+		dash_direction = Vector3.RIGHT.rotated(Vector3.UP, rotation.y)
+	is_dashing = true
+	dash_time_left = dash_duration
+	forced_movement_active = true
+	forced_movement_velocity = dash_direction * dash_speed
+	face_direction(dash_direction)
+	model_animations.play(&"stunned")
+	return true
+
+
+func _update_dash_before_movement(delta: float) -> void:
+	if is_dashing:
+		var dash_frame_fraction := minf(dash_time_left / delta, 1.0)
+		forced_movement_velocity = dash_direction * dash_speed * dash_frame_fraction
+	else:
+		dash_cooldown_left = maxf(dash_cooldown_left - delta, 0.0)
+
+
+func _update_dash_after_movement(delta: float) -> void:
+	if not is_dashing:
+		return
+	dash_time_left = maxf(dash_time_left - delta, 0.0)
+	if dash_time_left <= 0.0:
+		_finish_dash()
+
+
+func _finish_dash() -> void:
+	is_dashing = false
+	dash_time_left = 0.0
+	dash_direction = Vector3.ZERO
+	forced_movement_active = false
+	forced_movement_velocity = Vector3.ZERO
+	velocity.x = 0.0
+	velocity.z = 0.0
+	if stun_time_left <= 0.0 and model_animations.assigned_animation == &"stunned":
+		model_animations.play(&"idle")
 
 
 func _update_stun(delta: float) -> void:
