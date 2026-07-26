@@ -2,20 +2,20 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://cjr885x0ws0cg"
-path.s3tc="res://.godot/imported/duck_7.png-a6bb154dd28c19bb3603162b4ac7ed39.s3tc.ctex"
+uid="uid://slb6gg8t1hfk"
+path.s3tc="res://.godot/imported/duck_9.png-b61d3109201fe97a10b3871a2b6e0f14.s3tc.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc"],
 "vram_texture": true
 }
 generator_parameters={
-"md5": "d6a92ed5eb6ed85506e54a17305eb175"
+"md5": "cbb198584f7e33f86b2003eea913c835"
 }
 
 [deps]
 
-source_file="res://duck2/duck_7.png"
-dest_files=["res://.godot/imported/duck_7.png-a6bb154dd28c19bb3603162b4ac7ed39.s3tc.ctex"]
+source_file="res://duck2/duck_9.png"
+dest_files=["res://.godot/imported/duck_9.png-b61d3109201fe97a10b3871a2b6e0f14.s3tc.ctex"]
 
 [params]
 

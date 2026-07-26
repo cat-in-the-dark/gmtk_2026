@@ -4,7 +4,7 @@
 [ext_resource type="PackedScene" uid="uid://c363nfghjj6m6" path="res://player.tscn" id="1_h2yge"]
 [ext_resource type="PackedScene" uid="uid://cartgfib48y0f" path="res://box/box.tscn" id="3_h2yge"]
 [ext_resource type="PackedScene" uid="uid://cyscod0sjv43a" path="res://enemy.tscn" id="4_enemy"]
-[ext_resource type="Script" path="res://enemy_spawner.gd" id="5_spawner"]
+[ext_resource type="Script" uid="uid://bknjhtpkrcxph" path="res://enemy_spawner.gd" id="5_spawner"]
 
 [sub_resource type="WorldBoundaryShape3D" id="WorldBoundaryShape3D_lquwl"]
 
@@ -22,16 +22,10 @@ size = Vector3(12, 8, 12)
 
 [node name="main" type="Node3D" unique_id=134862043]
 
-[node name="EnemySpawner" type="Node" parent="."]
+[node name="EnemySpawner" type="Node" parent="." unique_id=5866840]
 script = ExtResource("5_spawner")
 enemy_scene = ExtResource("4_enemy")
 platform_path = NodePath("../level/platform1")
-spawn_height = 6.0
-spawn_margin = 1.0
-total_enemy_count = 10
-opening_wave_sizes = Array[int]([1, 2, 3, 4])
-repeating_wave_size = 6
-dash_enabled_from_wave = 3
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1998564022]
 environment = ExtResource("1_0xm2m")
