@@ -69,7 +69,10 @@ func _on_spawned_enemy_eliminated() -> void:
 		if game_finished:
 			return
 		game_finished = true
-		get_tree().call_deferred(&"reload_current_scene")
+		get_tree().call_deferred(
+			&"change_scene_to_file",
+			"res://gamewin/gamewin.tscn"
+		)
 		return
 	if current_wave_alive_count == 0:
 		call_deferred(&"_spawn_next_wave")
