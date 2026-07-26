@@ -45,6 +45,7 @@ class Leg:
 @export var step_forward := 0.65
 @export var step_duration := 0.12
 @export var step_height := 0.14
+@export var gravity_scale := 1.0
 @export var knockback_speed := 15.0
 @export var knockback_drag := 22.0
 
@@ -91,19 +92,31 @@ func _ready() -> void:
 
 
 func _physics_process(delta: float) -> void:
+	var was_on_floor := is_on_floor()
 	var is_moving := move_direction != Vector3.ZERO
 	if is_moving and not is_busy() and model_animations.current_animation == &"idle":
 		model_animations.stop()
 		model_animations.seek(0.0, true)
 	var was_knocked_back := _is_knocked_back()
-	var controlled_velocity := Vector3.ZERO if is_busy() else move_direction * move_speed
+	var vertical_velocity := velocity.y
+	if was_on_floor:
+		vertical_velocity = 0.0
+	else:
+		vertical_velocity += get_gravity().y * gravity_scale * delta
+	var controlled_velocity := Vector3.ZERO
+	if not is_busy():
+		if was_on_floor:
+			controlled_velocity = move_direction * move_speed
+		else:
+			controlled_velocity = Vector3(velocity.x, 0.0, velocity.z)
 	velocity = controlled_velocity + knockback_velocity
+	velocity.y = vertical_velocity
 	move_and_slide()
 	knockback_velocity = knockback_velocity.move_toward(Vector3.ZERO, knockback_drag * delta)
 	_update_knockback_bounce(delta)
-	if was_knocked_back or _is_knocked_back():
+	if was_knocked_back or _is_knocked_back() or not was_on_floor or not is_on_floor():
 		_sync_feet_to_body()
-	if is_moving and not is_busy():
+	if is_moving and not is_busy() and is_on_floor():
 		_try_start_step(move_direction)
 	_update_leg_step(left_leg, delta)
 	_update_leg_step(right_leg, delta)
@@ -119,7 +132,7 @@ func is_busy() -> bool:
 
 
 func start_attack(animation_name: StringName) -> bool:
-	if is_busy():
+	if is_busy() or not is_on_floor():
 		return false
 	is_attacking = true
 	active_attack = animation_name
