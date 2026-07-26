@@ -96,6 +96,9 @@ func _ready() -> void:
 func _physics_process(delta: float) -> void:
 	var was_on_floor := is_on_floor()
 	var is_moving := move_direction != Vector3.ZERO
+	if is_attacking and is_moving:
+		turning_leg = null
+		face_direction(move_direction)
 	if is_moving and not is_busy() and model_animations.current_animation == &"idle":
 		model_animations.stop()
 		model_animations.seek(0.0, true)

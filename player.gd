@@ -12,6 +12,7 @@ var attack_buffered := false
 var is_dashing := false
 var dash_time_left := 0.0
 var dash_cooldown_left := 0.0
+var dash_direction := Vector3.ZERO
 
 
 func _ready() -> void:
@@ -28,8 +29,12 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func _physics_process(delta: float) -> void:
 	move_direction = _get_input_direction()
+	if is_dashing:
+		var dash_frame_fraction := minf(dash_time_left / delta, 1.0)
+		forced_movement_velocity = dash_direction * dash_speed * dash_frame_fraction
+	else:
+		dash_cooldown_left = maxf(dash_cooldown_left - delta, 0.0)
 	super._physics_process(delta)
-	dash_cooldown_left = maxf(dash_cooldown_left - delta, 0.0)
 	if is_dashing:
 		dash_time_left = maxf(dash_time_left - delta, 0.0)
 		if dash_time_left <= 0.0:
@@ -61,15 +66,17 @@ func _request_dash() -> void:
 		direction = Vector3.RIGHT.rotated(Vector3.UP, rotation.y)
 	is_dashing = true
 	dash_time_left = dash_duration
-	dash_cooldown_left = dash_duration + dash_cooldown
+	dash_direction = direction
 	forced_movement_active = true
-	forced_movement_velocity = direction * dash_speed
+	forced_movement_velocity = dash_direction * dash_speed
 	model_animations.play(&"stunned")
 
 
 func _finish_dash() -> void:
 	is_dashing = false
 	dash_time_left = 0.0
+	dash_cooldown_left = dash_cooldown
+	dash_direction = Vector3.ZERO
 	forced_movement_active = false
 	forced_movement_velocity = Vector3.ZERO
 	velocity.x = 0.0
