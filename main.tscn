@@ -4,6 +4,7 @@
 [ext_resource type="PackedScene" uid="uid://c363nfghjj6m6" path="res://player.tscn" id="1_h2yge"]
 [ext_resource type="PackedScene" uid="uid://cartgfib48y0f" path="res://box/box.tscn" id="3_h2yge"]
 [ext_resource type="PackedScene" uid="uid://cyscod0sjv43a" path="res://enemy.tscn" id="4_enemy"]
+[ext_resource type="Script" path="res://enemy_spawner.gd" id="5_spawner"]
 
 [sub_resource type="WorldBoundaryShape3D" id="WorldBoundaryShape3D_lquwl"]
 
@@ -20,6 +21,16 @@ size = Vector3(12, 8, 12)
 size = Vector3(12, 8, 12)
 
 [node name="main" type="Node3D" unique_id=134862043]
+
+[node name="EnemySpawner" type="Node" parent="."]
+script = ExtResource("5_spawner")
+enemy_scene = ExtResource("4_enemy")
+platform_path = NodePath("../level/platform1")
+spawn_height = 6.0
+spawn_margin = 1.0
+total_enemy_count = 10
+opening_wave_sizes = Array[int]([1, 2, 3, 4])
+repeating_wave_size = 6
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1998564022]
 environment = ExtResource("1_0xm2m")
@@ -43,13 +54,7 @@ dash_speed = 16.0
 dash_duration = 0.18
 dash_cooldown = 0.3
 
-[node name="Enemy" parent="." unique_id=1479615210 instance=ExtResource("4_enemy")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.6907959, 0, -16.672564)
-
-[node name="Enemy2" parent="." unique_id=307265568 instance=ExtResource("4_enemy")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.517273, 0, -7.701531)
-
-[node name="Floor" type="StaticBody3D" parent="." unique_id=1210423933]
+[node name="Floor" type="StaticBody3D" parent="." unique_id=1210423933 groups=["kill_floor"]]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -8, 0)
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Floor" unique_id=381346723]

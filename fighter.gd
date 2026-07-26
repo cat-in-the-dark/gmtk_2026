@@ -2,6 +2,7 @@ class_name Fighter
 extends CharacterBody3D
 
 signal attack_finished
+signal eliminated
 
 
 class Leg:
@@ -58,6 +59,7 @@ var forced_movement_active := false
 var forced_movement_velocity := Vector3.ZERO
 var bounce_time_left := 0.0
 var bounce_duration := 0.0
+var is_eliminated := false
 var skin_rest_position := Vector3.ZERO
 var next_left := true
 var turning_leg: Leg
@@ -94,6 +96,8 @@ func _ready() -> void:
 
 
 func _physics_process(delta: float) -> void:
+	if is_eliminated:
+		return
 	var was_on_floor := is_on_floor()
 	var is_moving := move_direction != Vector3.ZERO
 	if is_attacking and is_moving:
@@ -119,6 +123,8 @@ func _physics_process(delta: float) -> void:
 	velocity = controlled_velocity + knockback_velocity
 	velocity.y = vertical_velocity
 	move_and_slide()
+	if _check_elimination_collision():
+		return
 	knockback_velocity = knockback_velocity.move_toward(Vector3.ZERO, knockback_drag * delta)
 	_update_knockback_bounce(delta)
 	if (
@@ -142,6 +148,21 @@ func _physics_process(delta: float) -> void:
 
 func is_busy() -> bool:
 	return is_attacking or is_hit or _is_knocked_back()
+
+
+func _check_elimination_collision() -> bool:
+	for collision_index in get_slide_collision_count():
+		var collider := get_slide_collision(collision_index).get_collider() as Node
+		if collider != null and collider.is_in_group(&"kill_floor"):
+			is_eliminated = true
+			eliminated.emit()
+			_on_reached_kill_floor()
+			return true
+	return false
+
+
+func _on_reached_kill_floor() -> void:
+	queue_free()
 
 
 func start_attack(animation_name: StringName) -> bool:

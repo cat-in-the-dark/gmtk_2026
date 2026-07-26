@@ -4,7 +4,7 @@ extends Fighter
 @export var attack_jitter_min := 0.2
 @export var attack_jitter_max := 0.55
 @export var domino_area_scale := 1.5
-@export var stun_duration := 3.0
+@export var stun_duration := 2.0
 
 var target: Node3D
 var attack_at := -1.0
@@ -32,7 +32,10 @@ func _physics_process(delta: float) -> void:
 	_update_stun(delta)
 	if target == null:
 		target = get_tree().get_first_node_in_group("player") as Node3D
-	if target != null and not is_busy():
+	if not is_on_floor():
+		move_direction = Vector3.ZERO
+		attack_at = -1.0
+	elif target != null and not is_busy():
 		var offset := target.global_position - global_position
 		offset.y = 0.0
 		if offset.length() > attack_range:

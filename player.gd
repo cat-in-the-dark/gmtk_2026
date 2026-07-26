@@ -51,6 +51,10 @@ func receive_hit(attacker_position: Vector3, attack_name: StringName = &"") -> v
 	super.receive_hit(attacker_position, attack_name)
 
 
+func _on_reached_kill_floor() -> void:
+	get_tree().call_deferred(&"reload_current_scene")
+
+
 func _request_attack() -> void:
 	if not is_attacking:
 		_start_next_attack()
