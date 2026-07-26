@@ -205,7 +205,7 @@ func _check_attack_hits() -> void:
 		query.exclude = [get_rid()]
 		for hit in space_state.intersect_shape(query, 16):
 			var body := hit.get("collider") as Node
-			if body == null:
+			if body == null or not _can_attack_body(body):
 				continue
 			var body_id := body.get_instance_id()
 			if hit_bodies.has(body_id):
@@ -215,6 +215,10 @@ func _check_attack_hits() -> void:
 				body.receive_hit(global_position, active_attack)
 			elif body.has_method("hit"):
 				body.hit()
+
+
+func _can_attack_body(_body: Node) -> bool:
+	return true
 
 
 func _try_start_step(direction: Vector3) -> void:
