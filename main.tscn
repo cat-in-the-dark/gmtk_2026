@@ -1,9 +1,9 @@
 [gd_scene format=3 uid="uid://da8sgbng7wcgu"]
 
 [ext_resource type="Environment" uid="uid://cvx82wuvou4v3" path="res://world_env.tres" id="1_0xm2m"]
-[ext_resource type="PackedScene" path="res://player.tscn" id="1_h2yge"]
+[ext_resource type="PackedScene" uid="uid://c363nfghjj6m6" path="res://player.tscn" id="1_h2yge"]
 [ext_resource type="PackedScene" uid="uid://cartgfib48y0f" path="res://box/box.tscn" id="3_h2yge"]
-[ext_resource type="PackedScene" path="res://enemy.tscn" id="4_enemy"]
+[ext_resource type="PackedScene" uid="uid://cyscod0sjv43a" path="res://enemy.tscn" id="4_enemy"]
 
 [sub_resource type="WorldBoundaryShape3D" id="WorldBoundaryShape3D_lquwl"]
 
@@ -39,26 +39,12 @@ directional_shadow_max_distance = 30.0
 
 [node name="Character" parent="." unique_id=1467132198 instance=ExtResource("1_h2yge")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6.2423706, 0, -12.385088)
-combo_window = 0.2
-move_speed = 6.0
-step_distance = 1.26
-step_forward = 0.66
 
 [node name="Enemy" parent="." unique_id=1479615210 instance=ExtResource("4_enemy")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.6907959, 0, -16.672564)
-attack_range = 1.7
-attack_jitter_min = 0.2
-attack_jitter_max = 0.55
-domino_area_scale = 1.5
-stun_duration = 3.0
 
 [node name="Enemy2" parent="." unique_id=307265568 instance=ExtResource("4_enemy")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.517273, 0, -7.701531)
-attack_range = 1.7
-attack_jitter_min = 0.2
-attack_jitter_max = 0.55
-domino_area_scale = 1.5
-stun_duration = 3.0
 
 [node name="Floor" type="StaticBody3D" parent="." unique_id=1210423933]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -8, 0)

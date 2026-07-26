@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://dx25o308d86wc"]
 
-[ext_resource type="Script" path="res://fighter.gd" id="2_controller"]
+[ext_resource type="Script" uid="uid://c08r7exj0m2wf" path="res://fighter.gd" id="2_controller"]
 [ext_resource type="PackedScene" uid="uid://nako1spvyjj2" path="res://duck2/duck.glb" id="5_0rvpn"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_apnw2"]
@@ -23,14 +23,14 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.075, 0)
 
 [node name="blockbench_export" parent="skin3" unique_id=60994825 instance=ExtResource("5_0rvpn")]
 
-[node name="Area3D" type="Area3D" parent="skin3/blockbench_export/root/arm_left/hand_left/hand_left_mesh" parent_id_path=PackedInt32Array(60994825, 105605458) index="0" unique_id=2025649508]
+[node name="Area3D" type="Area3D" parent="skin3/blockbench_export/root/arm_left/hand_left/hand_left_mesh" parent_id_path=PackedInt32Array(60994825, 1029497876) index="0" unique_id=2025649508]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -0.4)
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="skin3/blockbench_export/root/arm_left/hand_left/hand_left_mesh/Area3D" unique_id=289917763]
 transform = Transform3D(1.0000006, 7.4505806e-08, 2.5238842e-07, 6.7055225e-08, 1.0000023, 2.0861626e-07, 2.5425106e-07, -2.9802322e-08, 1.0000012, 0, 0, 0)
 shape = SubResource("BoxShape3D_xb8dy")
 
-[node name="Area3D" type="Area3D" parent="skin3/blockbench_export/root/arm_right/hand_right/hand_right_mesh" parent_id_path=PackedInt32Array(60994825, 257041495) index="0" unique_id=1930384602]
+[node name="Area3D" type="Area3D" parent="skin3/blockbench_export/root/arm_right/hand_right/hand_right_mesh" parent_id_path=PackedInt32Array(60994825, 1411713562) index="0" unique_id=1930384602]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.4)
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="skin3/blockbench_export/root/arm_right/hand_right/hand_right_mesh/Area3D" unique_id=1943790871]

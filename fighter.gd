@@ -40,9 +40,9 @@ class Leg:
 		return Vector2(aabb.position.y, aabb.end.y)
 
 
-@export var move_speed := 5.5
-@export var step_distance := 0.9
-@export var step_forward := 0.65
+@export var move_speed := 6
+@export var step_distance := 1.26
+@export var step_forward := 0.66
 @export var step_duration := 0.12
 @export var step_height := 0.14
 @export var gravity_scale := 1.0
