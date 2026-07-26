@@ -39,6 +39,9 @@ directional_shadow_max_distance = 30.0
 
 [node name="Character" parent="." unique_id=1467132198 instance=ExtResource("1_h2yge")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6.2423706, 0, -12.385088)
+dash_speed = 16.0
+dash_duration = 0.18
+dash_cooldown = 0.3
 
 [node name="Enemy" parent="." unique_id=1479615210 instance=ExtResource("4_enemy")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.6907959, 0, -16.672564)

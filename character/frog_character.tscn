@@ -1,0 +1,39 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://fighter.gd" id="2_controller"]
+[ext_resource type="PackedScene" path="res://frog/frog.glb" id="5_frog"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_body"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_left_hand"]
+size = Vector3(0.8, 0.8, 1.3)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_right_hand"]
+size = Vector3(0.8, 0.8, 1.3)
+
+[node name="Character" type="CharacterBody3D"]
+script = ExtResource("2_controller")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+shape = SubResource("CapsuleShape3D_body")
+
+[node name="skin3" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.075, 0)
+
+[node name="blockbench_export" parent="skin3" instance=ExtResource("5_frog")]
+
+[node name="Area3D" type="Area3D" parent="skin3/blockbench_export/root/arm_left/hand_left/hand_left_mesh"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -0.4)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="skin3/blockbench_export/root/arm_left/hand_left/hand_left_mesh/Area3D"]
+transform = Transform3D(1.0000006, 7.4505806e-08, 2.5238842e-07, 6.7055225e-08, 1.0000023, 2.0861626e-07, 2.5425106e-07, -2.9802322e-08, 1.0000012, 0, 0, 0)
+shape = SubResource("BoxShape3D_left_hand")
+
+[node name="Area3D" type="Area3D" parent="skin3/blockbench_export/root/arm_right/hand_right/hand_right_mesh"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.4)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="skin3/blockbench_export/root/arm_right/hand_right/hand_right_mesh/Area3D"]
+shape = SubResource("BoxShape3D_right_hand")
+
+[editable path="skin3/blockbench_export"]

@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://b4idksa1ucyos"
-path="res://.godot/imported/boot.png-f76ad5354b732e988a514ad4fed186f3.ctex"
+uid="uid://b83dlvuxshq7g"
+path="res://.godot/imported/lef_eye.png-e8e22878339f08891dffa32581a89a35.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://block_bench_models/boot/boot.png"
-dest_files=["res://.godot/imported/boot.png-f76ad5354b732e988a514ad4fed186f3.ctex"]
+source_file="res://block_bench_models/frog/lef_eye.png"
+dest_files=["res://.godot/imported/lef_eye.png-e8e22878339f08891dffa32581a89a35.ctex"]
 
 [params]
 

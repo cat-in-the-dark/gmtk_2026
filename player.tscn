@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://c363nfghjj6m6"]
 
-[ext_resource type="PackedScene" uid="uid://dx25o308d86wc" path="res://character/character.tscn" id="1_base"]
+[ext_resource type="PackedScene" path="res://character/frog_character.tscn" id="1_base"]
 [ext_resource type="Script" uid="uid://dwg4u15vq35ul" path="res://player.gd" id="2_player"]
 
 [node name="Player" unique_id=1435815790 groups=["player"] instance=ExtResource("1_base")]

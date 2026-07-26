@@ -1,0 +1,14 @@
+[gd_resource type="StandardMaterial3D" format=3 uid="uid://cvcrs77kv5hmw"]
+
+[ext_resource type="Texture2D" uid="uid://c32aykwc6ymfr" path="res://frog/frog_1.png" id="1_0bxck"]
+
+[resource]
+resource_name = "material_1"
+transparency = 2
+alpha_scissor_threshold = 0.05
+alpha_antialiasing_mode = 0
+cull_mode = 2
+albedo_texture = ExtResource("1_0bxck")
+texture_filter = 0
+texture_repeat = false
+metadata/_gltf_primary_texture_coord = 0
