@@ -64,10 +64,16 @@ mesh = SubResource("PlaneMesh_ig7tw")
 transform = Transform3D(0.70710677, 0, 0.70710677, 0, 1, 0, -0.70710677, 0, 0.70710677, 0, 0, -12)
 
 [node name="box1" parent="level" unique_id=1616515310 instance=ExtResource("3_h2yge")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.9786015, 0.6414876, -4.55138)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.5, 0.5, -5.5)
+
+[node name="box4" parent="level" unique_id=458615464 instance=ExtResource("3_h2yge")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.5, 0.5, 5.5)
 
 [node name="box2" parent="level" unique_id=1463229619 instance=ExtResource("3_h2yge")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.7822924, 0.6414876, 3.2639275)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.5, 0.5, 5.5)
+
+[node name="box3" parent="level" unique_id=614194156 instance=ExtResource("3_h2yge")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.5, 0.5, -5.5)
 
 [node name="platform1" type="StaticBody3D" parent="level" unique_id=1819550088]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -4, 0)
