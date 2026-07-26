@@ -2,15 +2,17 @@ extends Node
 
 @export var enemy_scene: PackedScene
 @export var platform_path: NodePath
+@export var enemy_counter_path: NodePath
 @export var spawn_height := 6.0
 @export var spawn_margin := 1.0
-@export_range(1, 100, 1) var total_enemy_count := 10
+@export_range(1, 100, 1) var total_enemy_count := 21
 @export var opening_wave_sizes: Array[int] = [1, 2, 3, 4]
 @export_range(1, 20, 1) var repeating_wave_size := 6
 @export_range(1, 100, 1) var dash_enabled_from_wave := 3
 
 var platform: StaticBody3D
 var platform_box: BoxShape3D
+var enemy_counter: Label3D
 var random := RandomNumberGenerator.new()
 var spawned_enemy_count := 0
 var eliminated_enemy_count := 0
@@ -21,14 +23,16 @@ var game_finished := false
 
 func _ready() -> void:
 	platform = get_node_or_null(platform_path) as StaticBody3D
-	if platform == null or enemy_scene == null:
-		push_error("EnemySpawner requires an enemy scene and a platform")
+	enemy_counter = get_node_or_null(enemy_counter_path) as Label3D
+	if platform == null or enemy_scene == null or enemy_counter == null:
+		push_error("EnemySpawner requires an enemy scene, platform, and enemy counter")
 		return
 	var collision_shape := platform.get_node_or_null("CollisionShape3D") as CollisionShape3D
 	if collision_shape == null or not collision_shape.shape is BoxShape3D:
 		push_error("EnemySpawner platform requires a BoxShape3D collision")
 		return
 	platform_box = collision_shape.shape as BoxShape3D
+	_update_enemy_counter()
 	random.randomize()
 	call_deferred(&"_spawn_next_wave")
 
@@ -60,6 +64,7 @@ func _spawn_next_wave() -> void:
 func _on_spawned_enemy_eliminated() -> void:
 	eliminated_enemy_count += 1
 	current_wave_alive_count = maxi(current_wave_alive_count - 1, 0)
+	_update_enemy_counter()
 	if eliminated_enemy_count >= total_enemy_count:
 		if game_finished:
 			return
@@ -68,6 +73,11 @@ func _on_spawned_enemy_eliminated() -> void:
 		return
 	if current_wave_alive_count == 0:
 		call_deferred(&"_spawn_next_wave")
+
+
+func _update_enemy_counter() -> void:
+	var remaining_enemy_count := maxi(total_enemy_count - eliminated_enemy_count, 0)
+	enemy_counter.text = str(remaining_enemy_count)
 
 
 func _get_spawn_position() -> Vector3:

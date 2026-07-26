@@ -27,6 +27,7 @@ size = Vector3(12, 8, 12)
 script = ExtResource("5_spawner")
 enemy_scene = ExtResource("4_enemy")
 platform_path = NodePath("../level/platform1")
+enemy_counter_path = NodePath("../level/EnemyCounter")
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1998564022]
 environment = ExtResource("1_0xm2m")
@@ -51,13 +52,12 @@ dash_duration = 0.18
 dash_cooldown = 0.3
 
 [node name="Floor" type="StaticBody3D" parent="." unique_id=1210423933 groups=["kill_floor"]]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -8, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -5, 0)
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Floor" unique_id=381346723]
 shape = SubResource("WorldBoundaryShape3D_lquwl")
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="Floor" unique_id=28330688]
-visible = false
 material_override = SubResource("FloorMaterial")
 mesh = SubResource("PlaneMesh_ig7tw")
 
@@ -87,7 +87,7 @@ mesh = SubResource("BoxMesh_apnw2")
 
 [node name="EnemyCounter" type="Label3D" parent="level" unique_id=290163380]
 transform = Transform3D(0.70710677, 0.70710677, 3.090862e-08, 0, -4.3711385e-08, 0.9999999, 0.70710677, -0.70710677, -3.090862e-08, 0, 0.0052490234, 0)
-text = "100"
+text = "21"
 font = ExtResource("6_7mycd")
 font_size = 640
 outline_size = 72
