@@ -5,12 +5,6 @@
 [ext_resource type="PackedScene" uid="uid://cartgfib48y0f" path="res://box/box.tscn" id="3_h2yge"]
 [ext_resource type="PackedScene" path="res://enemy.tscn" id="4_enemy"]
 
-[sub_resource type="BoxShape3D" id="BoxShape3D_apnw2"]
-size = Vector3(12, 2, 12)
-
-[sub_resource type="BoxMesh" id="BoxMesh_apnw2"]
-size = Vector3(12, 2, 12)
-
 [sub_resource type="WorldBoundaryShape3D" id="WorldBoundaryShape3D_lquwl"]
 
 [sub_resource type="StandardMaterial3D" id="FloorMaterial"]
@@ -19,20 +13,19 @@ albedo_color = Color(0.27451, 0.603922, 0.701961, 1)
 [sub_resource type="PlaneMesh" id="PlaneMesh_ig7tw"]
 size = Vector2(100, 100)
 
-[node name="main" type="Node3D" unique_id=134862043]
+[sub_resource type="BoxShape3D" id="BoxShape3D_apnw2"]
+size = Vector3(12, 8, 12)
 
-[node name="Character" parent="." unique_id=1467132198 instance=ExtResource("1_h2yge")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -10.506809)
-combo_window = 0.2
-move_speed = 6.0
-step_distance = 1.26
-step_forward = 0.66
+[sub_resource type="BoxMesh" id="BoxMesh_apnw2"]
+size = Vector3(12, 8, 12)
+
+[node name="main" type="Node3D" unique_id=134862043]
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1998564022]
 environment = ExtResource("1_0xm2m")
 
 [node name="Camera3D" type="Camera3D" parent="." unique_id=2067468966]
-transform = Transform3D(1, 0, 0, 0, 0.90630776, 0.42261827, 0, -0.42261827, 0.90630776, 3.5, 7.1639996, 5.5)
+transform = Transform3D(1, 0, 0, 0, 0.9063078, 0.4226183, 0, -0.4226183, 0.9063078, 0, 9, 3.93)
 projection = 1
 current = true
 size = 12.0
@@ -44,14 +37,15 @@ light_energy = 1.1
 shadow_enabled = true
 directional_shadow_max_distance = 30.0
 
-[node name="box1" parent="." unique_id=1616515310 instance=ExtResource("3_h2yge")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.0013676, 0.6414876, -4.429694)
-
-[node name="box2" parent="." unique_id=1463229619 instance=ExtResource("3_h2yge")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.2621508, 0.6414876, -4.429694)
+[node name="Character" parent="." unique_id=1467132198 instance=ExtResource("1_h2yge")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6.2423706, 0, -12.385088)
+combo_window = 0.2
+move_speed = 6.0
+step_distance = 1.26
+step_forward = 0.66
 
 [node name="Enemy" parent="." unique_id=1479615210 instance=ExtResource("4_enemy")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.5, 0, -9.006809)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.6907959, 0, -16.672564)
 attack_range = 1.7
 attack_jitter_min = 0.2
 attack_jitter_max = 0.55
@@ -59,24 +53,15 @@ domino_area_scale = 1.5
 stun_duration = 3.0
 
 [node name="Enemy2" parent="." unique_id=307265568 instance=ExtResource("4_enemy")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 0, -7.9068093)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.517273, 0, -7.701531)
 attack_range = 1.7
 attack_jitter_min = 0.2
 attack_jitter_max = 0.55
 domino_area_scale = 1.5
 stun_duration = 3.0
 
-[node name="platform1" type="StaticBody3D" parent="." unique_id=1819550088]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3, -1, -9)
-
-[node name="CollisionShape3D" type="CollisionShape3D" parent="platform1" unique_id=102241234]
-shape = SubResource("BoxShape3D_apnw2")
-
-[node name="MeshInstance3D" type="MeshInstance3D" parent="platform1" unique_id=1513292004]
-mesh = SubResource("BoxMesh_apnw2")
-
 [node name="Floor" type="StaticBody3D" parent="." unique_id=1210423933]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -2, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -8, 0)
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Floor" unique_id=381346723]
 shape = SubResource("WorldBoundaryShape3D_lquwl")
@@ -85,3 +70,21 @@ shape = SubResource("WorldBoundaryShape3D_lquwl")
 visible = false
 material_override = SubResource("FloorMaterial")
 mesh = SubResource("PlaneMesh_ig7tw")
+
+[node name="level" type="Node3D" parent="." unique_id=327117667]
+transform = Transform3D(0.70710677, 0, 0.70710677, 0, 1, 0, -0.70710677, 0, 0.70710677, 0, 0, -12)
+
+[node name="box1" parent="level" unique_id=1616515310 instance=ExtResource("3_h2yge")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.9786015, 0.6414876, -4.55138)
+
+[node name="box2" parent="level" unique_id=1463229619 instance=ExtResource("3_h2yge")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.7822924, 0.6414876, 3.2639275)
+
+[node name="platform1" type="StaticBody3D" parent="level" unique_id=1819550088]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -4, 0)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="level/platform1" unique_id=102241234]
+shape = SubResource("BoxShape3D_apnw2")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="level/platform1" unique_id=1513292004]
+mesh = SubResource("BoxMesh_apnw2")
