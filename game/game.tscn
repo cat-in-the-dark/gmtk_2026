@@ -8,6 +8,8 @@
 [ext_resource type="FontFile" uid="uid://cnrtfdru4342r" path="res://ui/theme/fonts/deltarune.ttf" id="6_7mycd"]
 [ext_resource type="Material" uid="uid://dc14maoctjf85" path="res://world/arena/floor/floor.tres" id="6_272bh"]
 [ext_resource type="Script" uid="uid://c2km480hh21y4" path="res://game/game.gd" id="7_main"]
+[ext_resource type="Script" uid="uid://xugcfaf8qsul" path="res://game/game_session.gd" id="8_session"]
+[ext_resource type="Script" uid="uid://butrnr5u4u1df" path="res://ui/hud/enemy_counter.gd" id="9_counter"]
 
 [sub_resource type="WorldBoundaryShape3D" id="WorldBoundaryShape3D_lquwl"]
 
@@ -26,11 +28,15 @@ size = Vector3(12, 8, 12)
 [node name="main" type="Node3D" unique_id=134862043]
 script = ExtResource("7_main")
 
+[node name="GameSession" type="Node" parent="."]
+script = ExtResource("8_session")
+player_path = NodePath("../Character")
+enemy_spawner_path = NodePath("../EnemySpawner")
+
 [node name="EnemySpawner" type="Node" parent="." unique_id=5866840]
 script = ExtResource("5_spawner")
 enemy_scene = ExtResource("4_enemy")
 platform_path = NodePath("../level/platform1")
-enemy_counter_path = NodePath("../level/EnemyCounter")
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1998564022]
 environment = ExtResource("1_0xm2m")
@@ -97,3 +103,5 @@ text = "21"
 font = ExtResource("6_7mycd")
 font_size = 640
 outline_size = 72
+script = ExtResource("9_counter")
+game_session_path = NodePath("../../GameSession")
