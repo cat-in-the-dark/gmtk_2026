@@ -125,17 +125,11 @@ class Leg:
 		return Vector2(aabb.position.y, aabb.end.y)
 
 
-@export var move_speed := 6
-@export var step_distance := 1.26
-@export var step_forward := 0.66
-@export var step_duration := 0.12
-@export var step_height := 0.14
-@export var gravity_scale := 1.0
-@export var knockback_speed := 15.0
-@export var knockback_drag := 22.0
+@export var stats: FighterStats
 @export var faction: Faction = Faction.NEUTRAL
 
 var move_direction := Vector3.ZERO
+var configuration_valid := true
 var state: FighterState:
 	get:
 		return _state
@@ -148,7 +142,7 @@ var is_hit: bool:
 var is_eliminated: bool:
 	get:
 		return _state == FighterState.ELIMINATED
-var active_attack := &"" as StringName
+var active_attack: AttackDefinition
 var knockback_velocity := Vector3.ZERO
 var forced_movement_active := false
 var forced_movement_velocity := Vector3.ZERO
@@ -185,6 +179,8 @@ var _state := FighterState.IDLE
 )
 
 func _ready() -> void:
+	if not _validate_fighter_configuration():
+		return
 	skin_rest_position = skin.position
 	animation_tree.callback_mode_process = (
 		AnimationMixer.ANIMATION_CALLBACK_MODE_PROCESS_PHYSICS
@@ -205,8 +201,43 @@ func _ready() -> void:
 	_play_presentation_state(_presentation_state_for(_state), true)
 
 
+func _validate_fighter_configuration() -> bool:
+	var errors := PackedStringArray()
+	if stats == null:
+		errors.append("stats cannot be null")
+	else:
+		for stats_error in stats.get_validation_errors():
+			errors.append("stats: %s" % stats_error)
+	return _report_configuration_errors("Fighter", errors)
+
+
+func _get_attack_scene_errors(attack: AttackDefinition) -> PackedStringArray:
+	var errors := attack.get_validation_errors()
+	if not model_animations.has_animation(attack.animation_name):
+		errors.append("model animation '%s' does not exist" % attack.animation_name)
+	if not attack_window_player.has_animation(attack.hitbox_profile):
+		errors.append("hitbox profile '%s' does not exist" % attack.hitbox_profile)
+	var state_machine := animation_tree.tree_root as AnimationNodeStateMachine
+	if state_machine == null or not state_machine.has_node(attack.animation_name):
+		errors.append("AnimationTree state '%s' does not exist" % attack.animation_name)
+	return errors
+
+
+func _report_configuration_errors(
+	configuration_name: String, errors: PackedStringArray
+) -> bool:
+	if errors.is_empty():
+		return true
+	configuration_valid = false
+	set_physics_process(false)
+	set_process_unhandled_input(false)
+	for configuration_error in errors:
+		push_error("%s configuration: %s" % [configuration_name, configuration_error])
+	return false
+
+
 func _physics_process(delta: float) -> void:
-	if is_eliminated:
+	if not configuration_valid or is_eliminated:
 		return
 	_update_locomotion_state()
 	var was_on_floor := is_on_floor()
@@ -219,13 +250,13 @@ func _physics_process(delta: float) -> void:
 	if was_on_floor:
 		vertical_velocity = 0.0
 	else:
-		vertical_velocity += get_gravity().y * gravity_scale * delta
+		vertical_velocity += get_gravity().y * stats.gravity_scale * delta
 	var controlled_velocity := Vector3.ZERO
 	if forced_movement_active:
 		controlled_velocity = forced_movement_velocity
 	elif not is_busy():
 		if was_on_floor:
-			controlled_velocity = move_direction * move_speed
+			controlled_velocity = move_direction * stats.move_speed
 		else:
 			controlled_velocity = Vector3(velocity.x, 0.0, velocity.z)
 	velocity = controlled_velocity + knockback_velocity
@@ -233,7 +264,9 @@ func _physics_process(delta: float) -> void:
 	move_and_slide()
 	if _check_elimination_collision():
 		return
-	knockback_velocity = knockback_velocity.move_toward(Vector3.ZERO, knockback_drag * delta)
+	knockback_velocity = knockback_velocity.move_toward(
+		Vector3.ZERO, stats.knockback_drag * delta
+	)
 	_update_knockback_bounce(delta)
 	if _state == FighterState.KNOCKBACK and not _is_knocked_back():
 		_change_state(_locomotion_state())
@@ -272,34 +305,39 @@ func _on_reached_kill_floor() -> void:
 	queue_free()
 
 
-func start_attack(animation_name: StringName) -> bool:
+func start_attack(attack: AttackDefinition) -> bool:
 	if not _can_transition_to(FighterState.ATTACK) or not is_on_floor():
 		return false
-	if not model_animations.has_animation(animation_name):
-		push_error("Missing model attack animation: %s" % animation_name)
+	if attack == null:
+		push_error("Cannot start a null attack definition")
 		return false
-	if not attack_window_player.has_animation(animation_name):
-		push_error("Missing hitbox window animation: %s" % animation_name)
+	var attack_errors := _get_attack_scene_errors(attack)
+	if not attack_errors.is_empty():
+		_report_configuration_errors("AttackDefinition '%s'" % attack.resource_path, attack_errors)
 		return false
-	active_attack = animation_name
+	active_attack = attack
 	hit_bodies.clear()
 	_close_attack_hitboxes()
 	if not _change_state(FighterState.ATTACK):
-		active_attack = &""
+		active_attack = null
 		return false
-	attack_window_player.play(animation_name)
+	attack_window_player.play(attack.hitbox_profile)
 	return true
 
 
-func receive_hit(attacker_position: Vector3, _attack_name: StringName = &"") -> void:
-	_start_hit(attacker_position, true)
+func receive_hit(attacker_position: Vector3, attack: AttackDefinition = null) -> void:
+	var knockback_strength := stats.default_knockback_strength
+	if attack != null:
+		knockback_strength = attack.knockback_strength
+	_start_hit(attacker_position, knockback_strength > 0.0, false, false, knockback_strength)
 
 
 func _start_hit(
 	attacker_position: Vector3,
 	should_knockback: bool,
 	allow_restart := false,
-	should_bounce := false
+	should_bounce := false,
+	knockback_strength := -1.0
 ) -> void:
 	if is_eliminated:
 		return
@@ -312,7 +350,10 @@ func _start_hit(
 		away.y = 0.0
 		if away.length_squared() < 0.001:
 			away = Vector3.RIGHT.rotated(Vector3.UP, rotation.y)
-		knockback_velocity = away.normalized() * knockback_speed
+		var resolved_strength := knockback_strength
+		if resolved_strength < 0.0:
+			resolved_strength = stats.default_knockback_strength
+		knockback_velocity = away.normalized() * resolved_strength
 	if should_bounce:
 		bounce_duration = 0.5
 		bounce_time_left = bounce_duration
@@ -331,7 +372,7 @@ func _on_attack_interrupted() -> void:
 
 
 func _on_presentation_animation_finished(animation_name: StringName) -> void:
-	if is_attacking and animation_name == active_attack:
+	if is_attacking and active_attack != null and animation_name == active_attack.animation_name:
 		_change_state(_locomotion_state())
 		attack_finished.emit()
 	elif is_hit and animation_name == &"hit":
@@ -371,7 +412,7 @@ func _can_transition_to(next_state: FighterState) -> bool:
 func _exit_state(previous_state: FighterState, next_state: FighterState) -> void:
 	if previous_state == FighterState.ATTACK:
 		_stop_attack_window()
-		active_attack = &""
+		active_attack = null
 	_on_state_exited(previous_state, next_state)
 
 
@@ -408,7 +449,8 @@ func _presentation_state_for(fighter_state: FighterState) -> StringName:
 		FighterState.MOVE:
 			presentation_state = &"move"
 		FighterState.ATTACK:
-			presentation_state = active_attack
+			if active_attack != null:
+				presentation_state = active_attack.animation_name
 		FighterState.HIT, FighterState.KNOCKBACK:
 			presentation_state = &"hit"
 		FighterState.DASH, FighterState.STUNNED:
@@ -474,10 +516,14 @@ func _close_attack_hitboxes() -> void:
 func _try_start_step(direction: Vector3) -> void:
 	if left_leg.progress < 1.0 or right_leg.progress < 1.0:
 		return
-	var left_rest := left_leg.root.global_position + left_leg.home_offset + direction * step_forward
-	var right_rest := right_leg.root.global_position + right_leg.home_offset + direction * step_forward
-	var should_move_left := _flat_distance(left_leg.target, left_rest) > step_distance
-	var should_move_right := _flat_distance(right_leg.target, right_rest) > step_distance
+	var left_rest := (
+		left_leg.root.global_position + left_leg.home_offset + direction * stats.step_forward
+	)
+	var right_rest := (
+		right_leg.root.global_position + right_leg.home_offset + direction * stats.step_forward
+	)
+	var should_move_left := _flat_distance(left_leg.target, left_rest) > stats.step_distance
+	var should_move_right := _flat_distance(right_leg.target, right_rest) > stats.step_distance
 	if should_move_left and (next_left or not should_move_right):
 		_start_step(left_leg, left_rest, direction)
 		next_left = false
@@ -497,9 +543,9 @@ func _start_step(leg: Leg, destination: Vector3, direction: Vector3) -> void:
 
 func _update_leg_step(leg: Leg, delta: float) -> void:
 	if leg.progress < 1.0:
-		leg.progress = minf(leg.progress + delta / step_duration, 1.0)
+		leg.progress = minf(leg.progress + delta / stats.step_duration, 1.0)
 		leg.target = leg.from.lerp(leg.to, leg.progress)
-		leg.target.y += sin(leg.progress * PI) * step_height
+		leg.target.y += sin(leg.progress * PI) * stats.step_height
 		_update_turn(leg)
 	leg.boot.global_position = leg.target - leg.boot_to_plant
 

@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="WaveConfig" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://game/spawning/config/wave_config.gd" id="1_config"]
+[ext_resource type="PackedScene" path="res://actors/enemy/enemy.tscn" id="2_enemy_scene"]
+[ext_resource type="Resource" path="res://actors/enemy/config/default_enemy.tres" id="3_enemy_config"]
+
+[resource]
+script = ExtResource("1_config")
+enemy_scene = ExtResource("2_enemy_scene")
+enemy_config = ExtResource("3_enemy_config")
+spawn_height = 6.0
+spawn_margin = 1.0
+total_enemy_count = 21
+opening_wave_sizes = Array[int]([1, 2, 3, 4])
+repeating_wave_size = 6
+dash_enabled_from_wave = 3

@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="AttackSequence" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://actors/combat/config/attack_sequence.gd" id="1_sequence"]
+[ext_resource type="Resource" path="res://actors/player/config/attacks/player_attack_1.tres" id="2_attack1"]
+[ext_resource type="Resource" path="res://actors/player/config/attacks/player_attack_2.tres" id="3_attack2"]
+[ext_resource type="Resource" path="res://actors/player/config/attacks/player_attack_3.tres" id="4_attack3"]
+
+[resource]
+script = ExtResource("1_sequence")
+attacks = [
+ExtResource("2_attack1"),
+ExtResource("3_attack2"),
+ExtResource("3_attack2"),
+ExtResource("4_attack3")
+]

@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="AttackDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://actors/combat/config/attack_definition.gd" id="1_attack"]
+
+[resource]
+script = ExtResource("1_attack")
+animation_name = &"attack2"
+hitbox_profile = &"attack2"
+strength = 1.0
+knockback_strength = 0.0
+combo_buffer_window = 0.22
+allowed_next_attacks = Array[StringName]([&"attack2", &"attack3"])
+is_domino_attack = false

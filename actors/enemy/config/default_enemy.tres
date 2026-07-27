@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="EnemyConfig" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://actors/enemy/config/enemy_config.gd" id="1_config"]
+[ext_resource type="Resource" path="res://actors/enemy/config/enemy_stats.tres" id="2_stats"]
+[ext_resource type="Resource" path="res://actors/enemy/config/enemy_attack.tres" id="3_attack"]
+
+[resource]
+script = ExtResource("1_config")
+fighter_stats = ExtResource("2_stats")
+attack = ExtResource("3_attack")
+attack_range = 1.7
+attack_charge_duration = 0.5
+domino_area_scale = 1.5
+stun_duration = 1.5
+can_dash_by_default = false
+dash_chance = 0.3
+dash_cooldown_jitter = 0.75

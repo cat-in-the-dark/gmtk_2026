@@ -2,10 +2,13 @@
 
 [ext_resource type="PackedScene" path="res://actors/player/frog/frog_character.tscn" id="1_base"]
 [ext_resource type="Script" uid="uid://dwg4u15vq35ul" path="res://actors/player/player.gd" id="2_player"]
+[ext_resource type="Resource" path="res://actors/player/config/player_stats.tres" id="3_stats"]
+[ext_resource type="Resource" path="res://actors/player/config/player_combo.tres" id="4_combo"]
 
 [node name="Player" unique_id=1435815790 groups=["player"] instance=ExtResource("1_base")]
 script = ExtResource("2_player")
+stats = ExtResource("3_stats")
 faction = 1
-combo_window = 0.22
+attack_sequence = ExtResource("4_combo")
 
 [editable path="skin3/blockbench_export"]

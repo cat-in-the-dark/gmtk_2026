@@ -1,11 +1,6 @@
 extends Fighter
 
-const ATTACK_COMBO: Array[StringName] = [&"attack1", &"attack2", &"attack2", &"attack3"]
-
-@export var combo_window := 0.22
-@export var dash_speed := 16.0
-@export var dash_duration := 0.18
-@export var dash_cooldown := 0.3
+@export var attack_sequence: AttackSequence
 
 var combo_step := 0
 var attack_buffered := false
@@ -16,7 +11,26 @@ var dash_direction := Vector3.ZERO
 
 func _ready() -> void:
 	super._ready()
+	if not configuration_valid or not _validate_player_configuration():
+		return
 	attack_finished.connect(_on_attack_finished)
+
+
+func _validate_player_configuration() -> bool:
+	var errors := PackedStringArray()
+	if attack_sequence == null:
+		errors.append("attack_sequence cannot be null")
+	else:
+		for sequence_error in attack_sequence.get_validation_errors():
+			errors.append("attack_sequence: %s" % sequence_error)
+		var validated_attacks := {}
+		for attack in attack_sequence.attacks:
+			if attack == null or validated_attacks.has(attack.get_instance_id()):
+				continue
+			validated_attacks[attack.get_instance_id()] = true
+			for scene_error in _get_attack_scene_errors(attack):
+				errors.append("attack '%s': %s" % [attack.animation_name, scene_error])
+	return _report_configuration_errors("Player", errors)
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -27,10 +41,12 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func _physics_process(delta: float) -> void:
+	if not configuration_valid:
+		return
 	move_direction = _get_input_direction()
 	if state == FighterState.DASH:
 		var dash_frame_fraction := minf(dash_time_left / delta, 1.0)
-		forced_movement_velocity = dash_direction * dash_speed * dash_frame_fraction
+		forced_movement_velocity = dash_direction * stats.dash_speed * dash_frame_fraction
 	else:
 		dash_cooldown_left = maxf(dash_cooldown_left - delta, 0.0)
 	super._physics_process(delta)
@@ -46,7 +62,7 @@ func _request_attack() -> void:
 	elif (
 		state == FighterState.ATTACK
 		and not attack_buffered
-		and combo_step < ATTACK_COMBO.size()
+		and combo_step < attack_sequence.attacks.size()
 		and _is_inside_combo_window()
 	):
 		attack_buffered = true
@@ -63,13 +79,15 @@ func _request_dash() -> void:
 
 
 func _start_next_attack() -> void:
-	if start_attack(ATTACK_COMBO[combo_step]):
+	if combo_step >= attack_sequence.attacks.size():
+		return
+	if start_attack(attack_sequence.attacks[combo_step]):
 		combo_step += 1
 		attack_buffered = false
 
 
 func _on_attack_finished() -> void:
-	if attack_buffered and combo_step < ATTACK_COMBO.size():
+	if attack_buffered and combo_step < attack_sequence.attacks.size():
 		_start_next_attack()
 	else:
 		combo_step = 0
@@ -84,16 +102,16 @@ func _on_attack_interrupted() -> void:
 func _on_state_entered(next_state: FighterState, previous_state: FighterState) -> void:
 	super._on_state_entered(next_state, previous_state)
 	if next_state == FighterState.DASH:
-		dash_time_left = dash_duration
+		dash_time_left = stats.dash_duration
 		forced_movement_active = true
-		forced_movement_velocity = dash_direction * dash_speed
+		forced_movement_velocity = dash_direction * stats.dash_speed
 
 
 func _on_state_exited(previous_state: FighterState, next_state: FighterState) -> void:
 	super._on_state_exited(previous_state, next_state)
 	if previous_state == FighterState.DASH:
 		dash_time_left = 0.0
-		dash_cooldown_left = dash_cooldown
+		dash_cooldown_left = stats.dash_cooldown
 		dash_direction = Vector3.ZERO
 		forced_movement_active = false
 		forced_movement_velocity = Vector3.ZERO
@@ -102,18 +120,18 @@ func _on_state_exited(previous_state: FighterState, next_state: FighterState) ->
 
 
 func _is_inside_combo_window() -> bool:
-	if state != FighterState.ATTACK or active_attack.is_empty():
+	if state != FighterState.ATTACK or active_attack == null:
 		return false
-	var animation := model_animations.get_animation(active_attack)
+	var animation := model_animations.get_animation(active_attack.animation_name)
 	if (
 		animation == null
 		or animation_state_machine == null
-		or animation_state_machine.get_current_node() != active_attack
+		or animation_state_machine.get_current_node() != active_attack.animation_name
 	):
 		return false
 	return (
 		animation_state_machine.get_current_play_position()
-		>= maxf(animation.length - combo_window, 0.0)
+		>= maxf(animation.length - active_attack.combo_buffer_window, 0.0)
 	)
 
 

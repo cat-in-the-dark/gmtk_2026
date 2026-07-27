@@ -3,7 +3,7 @@
 [ext_resource type="Environment" uid="uid://cvx82wuvou4v3" path="res://world/environment/world_env.tres" id="1_0xm2m"]
 [ext_resource type="PackedScene" uid="uid://c363nfghjj6m6" path="res://actors/player/player.tscn" id="1_h2yge"]
 [ext_resource type="PackedScene" uid="uid://cartgfib48y0f" path="res://world/props/box/box.tscn" id="3_h2yge"]
-[ext_resource type="PackedScene" uid="uid://cyscod0sjv43a" path="res://actors/enemy/enemy.tscn" id="4_enemy"]
+[ext_resource type="Resource" path="res://game/spawning/config/default_waves.tres" id="4_waves"]
 [ext_resource type="Script" uid="uid://bknjhtpkrcxph" path="res://game/spawning/enemy_spawner.gd" id="5_spawner"]
 [ext_resource type="FontFile" uid="uid://cnrtfdru4342r" path="res://ui/theme/fonts/deltarune.ttf" id="6_7mycd"]
 [ext_resource type="Material" uid="uid://dc14maoctjf85" path="res://world/arena/floor/floor.tres" id="6_272bh"]
@@ -35,7 +35,7 @@ enemy_spawner_path = NodePath("../EnemySpawner")
 
 [node name="EnemySpawner" type="Node" parent="." unique_id=5866840]
 script = ExtResource("5_spawner")
-enemy_scene = ExtResource("4_enemy")
+config = ExtResource("4_waves")
 platform_path = NodePath("../level/platform1")
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1998564022]
@@ -56,9 +56,6 @@ directional_shadow_max_distance = 30.0
 
 [node name="Character" parent="." unique_id=1467132198 instance=ExtResource("1_h2yge")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6.2423706, 0, -12.385088)
-dash_speed = 16.0
-dash_duration = 0.18
-dash_cooldown = 0.3
 
 [node name="Floor" type="StaticBody3D" parent="." unique_id=1210423933 groups=["kill_floor"]]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -5, 0)

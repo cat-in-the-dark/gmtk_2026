@@ -92,7 +92,12 @@ godot --headless --path . --export-debug Web \
   `AnimationTree` как presentation layer завершён 2026-07-28.
 - Исправление этапа 4 от 2026-07-28: ввод атаки во время dash/hit больше не
   проверяет combo window с пустым `active_attack`; проверка также защищена
-  собственным state guard и покрыта integration-сценарием.
+  собственным state guard.
+- Этап 5 пропущен по явному решению владельца проекта. Глубокие пути к узлам
+  Frog/Duck внутри `Fighter` намеренно остаются текущим техническим долгом.
+- Этап 6 с `FighterStats`, `AttackDefinition`, `AttackSequence`,
+  `EnemyConfig` и `WaveConfig` завершён 2026-07-28. Значения баланса перенесены
+  в `.tres`, дублирующие scene overrides и dynamic `enemy.set()` удалены.
 
 ## Текущее устройство проекта
 
@@ -250,20 +255,50 @@ Friendly fire определяется `Fighter.Faction`, а не scene group. �
 отдельный `intersect_shape`, но запрос ограничен слоем `FighterBody` и типом
 `Enemy`.
 
-Проверка state/animation integration запускается командой:
+Проверка data-driven конфигурации запускается командой:
 
 ```sh
-make test-fighter-state
+make test-data-config
 ```
 
-Она проверяет завершение и прерывание attack/dash/charge/stun, очистку forced
-movement, запрещённые переходы, соответствие gameplay-state состоянию
-`AnimationTree` и loop-настройки presentation graph. Каталог `tests/` исключён
-из Web export.
+Она проверяет загрузку и validation всех default `.tres`, неизменность combo,
+тайминга `0.22`, domino-флага, 21 врага, размеров волн, включения dash с третьей
+волны и типизированную конфигурацию `Enemy`. Каталог `tests/` исключён из Web
+export.
 
-Важно: ранее описанный target `make test-combat` отсутствует в текущем
-репозитории. Реальные границы hitbox windows при 30/60/120 FPS и общий one-hit
-двух рук сейчас не покрыты отдельной автоматической проверкой.
+Важно: ранее описанные targets `make test-combat` и
+`make test-fighter-state` отсутствуют в текущем репозитории. Реальные границы
+hitbox windows при 30/60/120 FPS, общий one-hit двух рук и переходы
+state/animation сейчас не покрыты отдельной автоматической проверкой.
+
+### Data-driven конфигурация
+
+Единственные владельцы default-значений баланса:
+
+```text
+actors/player/config/player_stats.tres
+actors/player/config/player_combo.tres
+actors/player/config/attacks/player_attack_{1,2,3}.tres
+actors/enemy/config/enemy_stats.tres
+actors/enemy/config/enemy_attack.tres
+actors/enemy/config/default_enemy.tres
+game/spawning/config/default_waves.tres
+```
+
+`Fighter` читает движение, процедурные шаги, physics reaction и dash из
+`FighterStats`. `Player` читает порядок combo и индивидуальное buffer window из
+`AttackSequence`. Активная атака теперь является `AttackDefinition`, а не
+строкой: отдельно заданы animation, hitbox profile, сила, knockback,
+разрешённые продолжения и domino-семантика.
+
+`EnemyConfig` агрегирует `FighterStats`, атаку, дистанцию/тайминг charge, stun,
+domino radius и dash probability. `WaveConfig` владеет enemy scene/config,
+spawn-параметрами, общим числом врагов и последовательностью волн.
+
+Все числовые поля имеют явный тип и Inspector ranges. Каждый custom Resource
+реализует `get_validation_errors()`. `Fighter`, `Player`, `Enemy` и
+`EnemySpawner` дополнительно валидируют ресурсы и совместимость
+animation/hitbox/scene ссылок при `_ready()`.
 
 ### Остальные сцены
 
@@ -465,7 +500,8 @@ knockback-вектор и domino registry остаются данными акт
 - В каждый момент времени у бойца одно основное состояние.
 - Начало нового состояния гарантированно очищает данные предыдущего.
 - Невозможные переходы отклоняются централизованно.
-- Прерывание attack/dash/charge/stun покрыто `make test-fighter-state`.
+- Прерывание attack/dash/charge/stun реализовано, но отдельный
+  `make test-fighter-state` в текущем репозитории отсутствует.
 
 ## P1. Гонка между Victory и Game Over
 
@@ -605,44 +641,35 @@ right_hand_hitbox
 
 ## P2. EnemySpawner недостаточно типобезопасен
 
+Статус: частично устранено на этапе 6; проверка spawn overlap остаётся.
+
 ### Текущее поведение
 
-`enemy_scene.instantiate()` приводится к `Fighter`, после чего вызывается:
+`EnemySpawner` получает один `WaveConfig`. До запуска первой волны он проверяет
+вложенный `EnemyConfig` и инстанцирует scene для проверки, что её корень имеет
+тип `Enemy`. Каждый экземпляр получает настройки через
+`Enemy.configure(enemy_config, wave_can_dash)`.
 
-```gdscript
-enemy.set("can_dash", wave_can_dash)
-```
+`current_wave_alive_count` и `spawned_enemy_count` увеличиваются только после
+успешной конфигурации и добавления конкретного `Enemy` в дерево.
 
-`can_dash` не является свойством `Fighter`.
+### Оставшийся риск
 
-`current_wave_alive_count` заранее устанавливается равным ожидаемому числу
-созданных врагов.
-
-### Риск
-
-- Неверная сцена приводит к runtime-ошибке.
-- Частичная ошибка спавна может навсегда заблокировать следующую волну.
 - Удаление врага способом, отличным от `eliminated`, не уменьшает счётчик.
 - Вся волна создаётся в один кадр без проверки пересечений; враги могут
   появиться друг в друге.
 
-### Требуемое изменение
+### Оставшееся изменение
 
-- Добавить `class_name Enemy` либо typed factory method.
-- Добавить `Enemy.configure(config)` вместо динамического `set()`.
-- Увеличивать alive count только после успешного создания врага.
 - Проверять spawn point через physics query или заранее расставленные
   `Marker3D`.
 - Решить, нужна ли задержка между волнами; если да, использовать `Timer`.
-- Разделить состояние волн и отображение счётчика сигналом
-  `remaining_enemies_changed`.
+- Если появятся альтернативные способы удаления врага, гарантировать сигнал
+  `eliminated` либо отслеживать `tree_exited`.
 
 ### Критерий готовности
 
-- Неверный `enemy_scene` обнаруживается до запуска волны.
-- Ошибка одного spawn не блокирует матч без диагностического сообщения.
 - Враги не появляются с пересекающимися body collision.
-- UI не передаётся спавнеру как обязательная зависимость.
 
 ## P2. Прямое преследование врага плохо масштабируется
 
@@ -703,64 +730,35 @@ one-shot и удерживает финальную позу до окончан
 
 ## P2. Баланс и поведение смешаны
 
+Статус: устранено на этапе 6.
+
 ### Текущее поведение
 
-Настройки разбросаны между:
-
-- константами в скриптах;
-- значениями `@export`;
-- override в `actors/player/player.tscn` и `actors/enemy/enemy.tscn`;
-- повторными override инстанса Player в `game/game.tscn`.
-
-Пример: `move_speed := 6` выводится как `int`. `step_duration`, drag, cooldown
-и другие значения не всегда ограничены безопасным диапазоном.
-
-Combo использует:
-
-```gdscript
-[attack1, attack2, attack2, attack3]
-```
-
-При `combo_window = 0.22` и длинах первых атак 0.25/0.208 секунды окно буфера
-открывается почти сразу. Это может быть намеренной forgiving-механикой, но
-должно быть явно зафиксировано тестом или комментарием.
-
-### Требуемое изменение
-
-Создать custom Resources:
+Баланс хранится в custom Resources:
 
 ```text
-FighterStats
-AttackDefinition
-AttackSequence
-EnemyConfig
-WaveConfig
+FighterStats      — movement, procedural steps, gravity, knockback, dash
+AttackDefinition  — animation/hitbox, strength, knockback, combo, domino
+AttackSequence    — упорядоченная combo
+EnemyConfig       — stats, attack, AI combat/dash
+WaveConfig        — enemy factory data, spawn area, wave sequence
 ```
 
-Минимальный `AttackDefinition`:
+Combo `attack1 → attack2 → attack2 → attack3` описано
+`player_combo.tres`. Окно `0.22` хранится в каждой допускающей продолжение
+`AttackDefinition`. Для короткого `attack2` окно намеренно охватывает клип с
+начала — это forgiving-настройка, зафиксированная validation test.
 
-```text
-animation_name
-damage_or_strength
-knockback_strength
-combo_buffer_window
-allowed_next_attacks
-hitbox_profile
-is_domino_attack
-```
-
-Для числовых экспортов:
-
-- добавить явные `float`/`int`;
-- использовать `@export_range`;
-- добавить проверки нулевой `step_duration`;
-- определить допустимые отрицательные значения.
+Числовые поля имеют явные типы, `@export_range` и runtime validation. Нулевой
+`step_duration`, пустая атака/sequence, отрицательные physics values, неверный
+порядок combo и неполный wave/enemy config отклоняются с сообщением.
 
 ### Критерий готовности
 
-- Баланс можно менять через `.tres`, не редактируя поведение.
-- Одинаковые default values не повторяются в трёх местах.
-- Невалидная конфигурация обнаруживается в `_ready()` или editor validation.
+- Выполнено: баланс меняется через `.tres`, не редактируя поведение.
+- Выполнено: значения больше не повторяются в скриптах и scene overrides.
+- Выполнено: невалидная конфигурация обнаруживается в `_ready()` и
+  `make test-data-config`.
 
 ## P2. Дублирование character scenes
 
@@ -1129,6 +1127,8 @@ Victory и Game Over создаются как inherited scenes или как о
 
 ### Этап 5. FighterRig и общая сцена бойца
 
+Статус: пропущен по решению владельца; не выполнять без нового запроса.
+
 1. Создать адаптер rig.
 2. Подключить Frog, не меняя поведение.
 3. Подключить Duck.
@@ -1139,6 +1139,8 @@ Victory и Game Over создаются как inherited scenes или как о
 Результат: модели можно реимпортировать и заменять локально.
 
 ### Этап 6. Data-driven конфигурация
+
+Статус: завершён.
 
 1. Создать `FighterStats`.
 2. Создать `AttackDefinition` и combo sequence.
@@ -1216,7 +1218,7 @@ Victory и Game Over создаются как inherited scenes или как о
 
 ```sh
 make lint
-make test-fighter-state
+make test-data-config
 godot --headless --path . --quit-after 300
 ```
 
@@ -1242,7 +1244,8 @@ godot --headless --path . --export-debug Web \
 Для двухдневного jam-проекта исходная база качественная: она читаема, компактна
 и использует основные механизмы Godot без лишней инфраструктуры.
 
-Первые четыре этапа плана завершены. Главный оставшийся архитектурный долг —
-связь `Fighter` с глубокими путями внутри импортированных GLB. Следующим этапом
-должен быть `FighterRig` и общая сцена бойца, затем data-driven конфигурация
-баланса.
+Этапы 2, 3, 4 и 6 завершены; этапы 1 и 5 пропущены по решению владельца.
+Главный оставшийся архитектурный долг — связь `Fighter` с глубокими путями
+внутри импортированных GLB, но возвращаться к нему без нового запроса не
+следует. Следующий запланированный этап — общий result screen и presentation
+cleanup.
