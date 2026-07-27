@@ -5,6 +5,7 @@
 [ext_resource type="Script" path="res://actors/combat/attack_hitbox.gd" id="4_hitbox"]
 [ext_resource type="PackedScene" uid="uid://nako1spvyjj2" path="res://actors/enemy/duck/duck.glb" id="5_0rvpn"]
 [ext_resource type="AnimationLibrary" path="res://actors/combat/attack_windows.tres" id="6_windows"]
+[ext_resource type="AnimationNodeStateMachine" path="res://actors/enemy/duck/duck_animation_tree.tres" id="7_animation_tree"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_apnw2"]
 
@@ -64,5 +65,11 @@ callback_mode_process = 0
 libraries = {
 &"": ExtResource("6_windows")
 }
+
+[node name="AnimationTree" type="AnimationTree" parent="."]
+tree_root = ExtResource("7_animation_tree")
+anim_player = NodePath("../skin3/blockbench_export/AnimationPlayer")
+callback_mode_process = 0
+parameters/move/freeze/scale = 0.0
 
 [editable path="skin3/blockbench_export"]

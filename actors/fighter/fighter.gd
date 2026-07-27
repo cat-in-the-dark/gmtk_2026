@@ -4,11 +4,89 @@ extends CharacterBody3D
 signal attack_finished
 signal attack_landed(target: Node3D)
 signal eliminated
+signal state_changed(previous_state: int, current_state: int)
 
 enum Faction {
 	NEUTRAL,
 	PLAYER,
 	ENEMY,
+}
+
+enum FighterState {
+	IDLE,
+	MOVE,
+	ATTACK,
+	HIT,
+	DASH,
+	CHARGE,
+	STUNNED,
+	KNOCKBACK,
+	ELIMINATED,
+}
+
+const ALLOWED_STATE_TRANSITIONS: Dictionary = {
+	FighterState.IDLE: [
+		FighterState.MOVE,
+		FighterState.ATTACK,
+		FighterState.HIT,
+		FighterState.DASH,
+		FighterState.CHARGE,
+		FighterState.STUNNED,
+		FighterState.KNOCKBACK,
+		FighterState.ELIMINATED,
+	],
+	FighterState.MOVE: [
+		FighterState.IDLE,
+		FighterState.ATTACK,
+		FighterState.HIT,
+		FighterState.DASH,
+		FighterState.CHARGE,
+		FighterState.STUNNED,
+		FighterState.KNOCKBACK,
+		FighterState.ELIMINATED,
+	],
+	FighterState.ATTACK: [
+		FighterState.IDLE,
+		FighterState.MOVE,
+		FighterState.HIT,
+		FighterState.ELIMINATED,
+	],
+	FighterState.HIT: [
+		FighterState.IDLE,
+		FighterState.MOVE,
+		FighterState.STUNNED,
+		FighterState.KNOCKBACK,
+		FighterState.ELIMINATED,
+	],
+	FighterState.DASH: [
+		FighterState.IDLE,
+		FighterState.MOVE,
+		FighterState.HIT,
+		FighterState.STUNNED,
+		FighterState.ELIMINATED,
+	],
+	FighterState.CHARGE: [
+		FighterState.IDLE,
+		FighterState.MOVE,
+		FighterState.ATTACK,
+		FighterState.HIT,
+		FighterState.ELIMINATED,
+	],
+	FighterState.STUNNED: [
+		FighterState.IDLE,
+		FighterState.MOVE,
+		FighterState.HIT,
+		FighterState.KNOCKBACK,
+		FighterState.ELIMINATED,
+	],
+	FighterState.KNOCKBACK: [
+		FighterState.IDLE,
+		FighterState.MOVE,
+		FighterState.HIT,
+		FighterState.STUNNED,
+		FighterState.ELIMINATED,
+	],
+	FighterState.ELIMINATED: [],
 }
 
 class Leg:
@@ -58,24 +136,36 @@ class Leg:
 @export var faction: Faction = Faction.NEUTRAL
 
 var move_direction := Vector3.ZERO
-var is_attacking := false
-var is_hit := false
+var state: FighterState:
+	get:
+		return _state
+var is_attacking: bool:
+	get:
+		return _state == FighterState.ATTACK
+var is_hit: bool:
+	get:
+		return _state == FighterState.HIT
+var is_eliminated: bool:
+	get:
+		return _state == FighterState.ELIMINATED
 var active_attack := &"" as StringName
 var knockback_velocity := Vector3.ZERO
 var forced_movement_active := false
 var forced_movement_velocity := Vector3.ZERO
 var bounce_time_left := 0.0
 var bounce_duration := 0.0
-var is_eliminated := false
 var skin_rest_position := Vector3.ZERO
 var next_left := true
 var turning_leg: Leg
 var turn_start_yaw := 0.0
 var turn_target_yaw := 0.0
 var hit_bodies: Dictionary = {}
+var animation_state_machine: AnimationNodeStateMachinePlayback
+var _state := FighterState.IDLE
 
 @onready var skin: Node3D = $skin3/blockbench_export
 @onready var model_animations: AnimationPlayer = skin.get_node("AnimationPlayer")
+@onready var animation_tree: AnimationTree = $AnimationTree
 @onready var attack_window_player: AnimationPlayer = $AttackWindowPlayer
 @onready var hand_hitboxes: Array[AttackHitbox] = [
 	skin.get_node("root/arm_left/hand_left/hand_left_mesh/LeftHandHitbox"),
@@ -94,32 +184,36 @@ var hit_bodies: Dictionary = {}
 	skin.get_node("root/right_leg/right_boot/ik_locator_right_boot2")
 )
 
-
 func _ready() -> void:
 	skin_rest_position = skin.position
-	model_animations.callback_mode_process = (
+	animation_tree.callback_mode_process = (
 		AnimationMixer.ANIMATION_CALLBACK_MODE_PROCESS_PHYSICS
 	)
-	model_animations.animation_finished.connect(_on_model_animation_finished)
+	animation_tree.active = true
+	animation_state_machine = (
+		animation_tree.get(&"parameters/playback") as AnimationNodeStateMachinePlayback
+	)
+	if animation_state_machine == null:
+		push_error("Fighter AnimationTree must use AnimationNodeStateMachine")
+	else:
+		animation_tree.animation_finished.connect(_on_presentation_animation_finished)
 	for hitbox in hand_hitboxes:
 		hitbox.configure(self)
 	_close_attack_hitboxes()
 	_update_leg(left_leg)
 	_update_leg(right_leg)
-	_play_idle_if_needed()
+	_play_presentation_state(_presentation_state_for(_state), true)
 
 
 func _physics_process(delta: float) -> void:
 	if is_eliminated:
 		return
+	_update_locomotion_state()
 	var was_on_floor := is_on_floor()
 	var is_moving := move_direction != Vector3.ZERO
 	if is_attacking and is_moving:
 		turning_leg = null
 		face_direction(move_direction)
-	if is_moving and not is_busy() and model_animations.current_animation == &"idle":
-		model_animations.stop()
-		model_animations.seek(0.0, true)
 	var was_knocked_back := _is_knocked_back()
 	var vertical_velocity := velocity.y
 	if was_on_floor:
@@ -141,6 +235,8 @@ func _physics_process(delta: float) -> void:
 		return
 	knockback_velocity = knockback_velocity.move_toward(Vector3.ZERO, knockback_drag * delta)
 	_update_knockback_bounce(delta)
+	if _state == FighterState.KNOCKBACK and not _is_knocked_back():
+		_change_state(_locomotion_state())
 	if (
 		was_knocked_back
 		or _is_knocked_back()
@@ -155,23 +251,20 @@ func _physics_process(delta: float) -> void:
 	_update_leg_step(right_leg, delta)
 	_update_leg(left_leg)
 	_update_leg(right_leg)
-	if not is_busy():
-		_play_idle_if_needed()
 
 
 func is_busy() -> bool:
-	return is_attacking or is_hit or _is_knocked_back()
+	return _state != FighterState.IDLE and _state != FighterState.MOVE
 
 
 func _check_elimination_collision() -> bool:
 	for collision_index in get_slide_collision_count():
 		var collider := get_slide_collision(collision_index).get_collider() as Node
 		if collider != null and collider.is_in_group(&"kill_floor"):
-			is_eliminated = true
-			_stop_attack_window()
-			eliminated.emit()
-			_on_reached_kill_floor()
-			return true
+			if _change_state(FighterState.ELIMINATED):
+				eliminated.emit()
+				_on_reached_kill_floor()
+				return true
 	return false
 
 
@@ -180,7 +273,7 @@ func _on_reached_kill_floor() -> void:
 
 
 func start_attack(animation_name: StringName) -> bool:
-	if is_busy() or not is_on_floor():
+	if not _can_transition_to(FighterState.ATTACK) or not is_on_floor():
 		return false
 	if not model_animations.has_animation(animation_name):
 		push_error("Missing model attack animation: %s" % animation_name)
@@ -188,11 +281,12 @@ func start_attack(animation_name: StringName) -> bool:
 	if not attack_window_player.has_animation(animation_name):
 		push_error("Missing hitbox window animation: %s" % animation_name)
 		return false
-	is_attacking = true
 	active_attack = animation_name
 	hit_bodies.clear()
 	_close_attack_hitboxes()
-	model_animations.play(animation_name)
+	if not _change_state(FighterState.ATTACK):
+		active_attack = &""
+		return false
 	attack_window_player.play(animation_name)
 	return true
 
@@ -207,14 +301,12 @@ func _start_hit(
 	allow_restart := false,
 	should_bounce := false
 ) -> void:
+	if is_eliminated:
+		return
 	if (is_hit or _is_knocked_back()) and not allow_restart:
 		return
 	if is_attacking:
 		_on_attack_interrupted()
-		_stop_attack_window()
-	is_attacking = false
-	is_hit = true
-	active_attack = &""
 	if should_knockback:
 		var away := global_position - attacker_position
 		away.y = 0.0
@@ -224,7 +316,7 @@ func _start_hit(
 	if should_bounce:
 		bounce_duration = 0.5
 		bounce_time_left = bounce_duration
-	model_animations.play(&"hit")
+	_change_state(FighterState.HIT, is_hit)
 
 
 func face_direction(direction: Vector3) -> void:
@@ -238,25 +330,104 @@ func _on_attack_interrupted() -> void:
 	pass
 
 
-func _on_model_animation_finished(animation_name: StringName) -> void:
-	if animation_name == &"idle":
-		_play_idle_if_needed()
-	elif animation_name == &"hit":
-		is_hit = false
-		_play_idle_if_needed()
-	elif is_attacking and animation_name == active_attack:
-		_stop_attack_window()
-		is_attacking = false
-		active_attack = &""
+func _on_presentation_animation_finished(animation_name: StringName) -> void:
+	if is_attacking and animation_name == active_attack:
+		_change_state(_locomotion_state())
 		attack_finished.emit()
-		_play_idle_if_needed()
+	elif is_hit and animation_name == &"hit":
+		_change_state(_state_after_hit())
 
 
-func _play_idle_if_needed() -> void:
-	if move_direction == Vector3.ZERO and not is_busy() and (
-		model_animations.current_animation != &"idle" or not model_animations.is_playing()
-	):
-		model_animations.play(&"idle")
+func _state_after_hit() -> FighterState:
+	if _is_knocked_back():
+		return FighterState.KNOCKBACK
+	return _locomotion_state()
+
+
+func _change_state(next_state: FighterState, allow_reenter := false) -> bool:
+	if next_state == _state and not allow_reenter:
+		return false
+	if next_state != _state and not _can_transition_to(next_state):
+		return false
+	var previous_state := _state
+	var previous_presentation := _presentation_state_for(previous_state)
+	_exit_state(previous_state, next_state)
+	_state = next_state
+	_enter_state(next_state, previous_state)
+	var next_presentation := _presentation_state_for(next_state)
+	if allow_reenter or next_presentation != previous_presentation:
+		_play_presentation_state(next_presentation, true)
+	state_changed.emit(previous_state, next_state)
+	return true
+
+
+func _can_transition_to(next_state: FighterState) -> bool:
+	if next_state == _state:
+		return false
+	var allowed_states: Array = ALLOWED_STATE_TRANSITIONS.get(_state, [])
+	return allowed_states.has(next_state)
+
+
+func _exit_state(previous_state: FighterState, next_state: FighterState) -> void:
+	if previous_state == FighterState.ATTACK:
+		_stop_attack_window()
+		active_attack = &""
+	_on_state_exited(previous_state, next_state)
+
+
+func _enter_state(next_state: FighterState, previous_state: FighterState) -> void:
+	if next_state == FighterState.ELIMINATED:
+		_stop_attack_window()
+	_on_state_entered(next_state, previous_state)
+
+
+func _on_state_exited(_previous_state: FighterState, _next_state: FighterState) -> void:
+	pass
+
+
+func _on_state_entered(_next_state: FighterState, _previous_state: FighterState) -> void:
+	pass
+
+
+func _update_locomotion_state() -> void:
+	if _state == FighterState.IDLE or _state == FighterState.MOVE:
+		_change_state(_locomotion_state())
+
+
+func _locomotion_state() -> FighterState:
+	if move_direction == Vector3.ZERO:
+		return FighterState.IDLE
+	return FighterState.MOVE
+
+
+func _presentation_state_for(fighter_state: FighterState) -> StringName:
+	var presentation_state := &"idle"
+	match fighter_state:
+		FighterState.IDLE:
+			presentation_state = &"idle"
+		FighterState.MOVE:
+			presentation_state = &"move"
+		FighterState.ATTACK:
+			presentation_state = active_attack
+		FighterState.HIT, FighterState.KNOCKBACK:
+			presentation_state = &"hit"
+		FighterState.DASH, FighterState.STUNNED:
+			presentation_state = &"stunned"
+		FighterState.CHARGE:
+			presentation_state = &"attack_charge"
+	return presentation_state
+
+
+func _play_presentation_state(presentation_state: StringName, restart: bool) -> void:
+	if animation_state_machine == null or presentation_state.is_empty():
+		return
+	var state_machine := animation_tree.tree_root as AnimationNodeStateMachine
+	if state_machine == null or not state_machine.has_node(presentation_state):
+		push_error("Missing AnimationTree state: %s" % presentation_state)
+		return
+	if animation_state_machine.get_current_node() == presentation_state and not restart:
+		return
+	animation_state_machine.start(presentation_state, restart)
 
 
 func try_attack_hurtbox(hurtbox: FighterHurtbox) -> void:

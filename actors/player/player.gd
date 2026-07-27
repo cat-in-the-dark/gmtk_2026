@@ -9,7 +9,6 @@ const ATTACK_COMBO: Array[StringName] = [&"attack1", &"attack2", &"attack2", &"a
 
 var combo_step := 0
 var attack_buffered := false
-var is_dashing := false
 var dash_time_left := 0.0
 var dash_cooldown_left := 0.0
 var dash_direction := Vector3.ZERO
@@ -29,32 +28,27 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func _physics_process(delta: float) -> void:
 	move_direction = _get_input_direction()
-	if is_dashing:
+	if state == FighterState.DASH:
 		var dash_frame_fraction := minf(dash_time_left / delta, 1.0)
 		forced_movement_velocity = dash_direction * dash_speed * dash_frame_fraction
 	else:
 		dash_cooldown_left = maxf(dash_cooldown_left - delta, 0.0)
 	super._physics_process(delta)
-	if is_dashing:
+	if state == FighterState.DASH:
 		dash_time_left = maxf(dash_time_left - delta, 0.0)
 		if dash_time_left <= 0.0:
-			_finish_dash()
-
-
-func is_busy() -> bool:
-	return super.is_busy() or is_dashing
-
-
-func receive_hit(attacker_position: Vector3, attack_name: StringName = &"") -> void:
-	if is_dashing:
-		_finish_dash()
-	super.receive_hit(attacker_position, attack_name)
+			_change_state(_locomotion_state())
 
 
 func _request_attack() -> void:
-	if not is_attacking:
+	if state == FighterState.IDLE or state == FighterState.MOVE:
 		_start_next_attack()
-	elif not attack_buffered and combo_step < ATTACK_COMBO.size() and _is_inside_combo_window():
+	elif (
+		state == FighterState.ATTACK
+		and not attack_buffered
+		and combo_step < ATTACK_COMBO.size()
+		and _is_inside_combo_window()
+	):
 		attack_buffered = true
 
 
@@ -64,25 +58,8 @@ func _request_dash() -> void:
 	var direction := _get_input_direction()
 	if direction == Vector3.ZERO:
 		direction = Vector3.RIGHT.rotated(Vector3.UP, rotation.y)
-	is_dashing = true
-	dash_time_left = dash_duration
 	dash_direction = direction
-	forced_movement_active = true
-	forced_movement_velocity = dash_direction * dash_speed
-	model_animations.play(&"stunned")
-
-
-func _finish_dash() -> void:
-	is_dashing = false
-	dash_time_left = 0.0
-	dash_cooldown_left = dash_cooldown
-	dash_direction = Vector3.ZERO
-	forced_movement_active = false
-	forced_movement_velocity = Vector3.ZERO
-	velocity.x = 0.0
-	velocity.z = 0.0
-	if model_animations.assigned_animation == &"stunned":
-		model_animations.play(&"idle")
+	_change_state(FighterState.DASH)
 
 
 func _start_next_attack() -> void:
@@ -104,11 +81,40 @@ func _on_attack_interrupted() -> void:
 	attack_buffered = false
 
 
+func _on_state_entered(next_state: FighterState, previous_state: FighterState) -> void:
+	super._on_state_entered(next_state, previous_state)
+	if next_state == FighterState.DASH:
+		dash_time_left = dash_duration
+		forced_movement_active = true
+		forced_movement_velocity = dash_direction * dash_speed
+
+
+func _on_state_exited(previous_state: FighterState, next_state: FighterState) -> void:
+	super._on_state_exited(previous_state, next_state)
+	if previous_state == FighterState.DASH:
+		dash_time_left = 0.0
+		dash_cooldown_left = dash_cooldown
+		dash_direction = Vector3.ZERO
+		forced_movement_active = false
+		forced_movement_velocity = Vector3.ZERO
+		velocity.x = 0.0
+		velocity.z = 0.0
+
+
 func _is_inside_combo_window() -> bool:
-	var animation := model_animations.get_animation(active_attack)
-	if animation == null:
+	if state != FighterState.ATTACK or active_attack.is_empty():
 		return false
-	return model_animations.current_animation_position >= maxf(animation.length - combo_window, 0.0)
+	var animation := model_animations.get_animation(active_attack)
+	if (
+		animation == null
+		or animation_state_machine == null
+		or animation_state_machine.get_current_node() != active_attack
+	):
+		return false
+	return (
+		animation_state_machine.get_current_play_position()
+		>= maxf(animation.length - combo_window, 0.0)
+	)
 
 
 func _get_input_direction() -> Vector3:

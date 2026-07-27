@@ -1,0 +1,50 @@
+[gd_resource type="AnimationNodeStateMachine" format=3]
+
+[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_attack1"]
+animation = &"attack1"
+
+[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_attack2"]
+animation = &"attack2"
+
+[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_attack3"]
+animation = &"attack3"
+
+[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_hit"]
+animation = &"hit"
+
+[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_idle"]
+animation = &"idle"
+use_custom_timeline = true
+timeline_length = 0.45833
+loop_mode = 1
+
+[sub_resource type="AnimationNodeTimeScale" id="AnimationNodeTimeScale_freeze"]
+
+[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_move_pose"]
+animation = &"idle"
+
+[sub_resource type="AnimationNodeBlendTree" id="AnimationNodeBlendTree_move"]
+nodes/idle/node = SubResource("AnimationNodeAnimation_move_pose")
+nodes/idle/position = Vector2(-300, 0)
+nodes/freeze/node = SubResource("AnimationNodeTimeScale_freeze")
+nodes/freeze/position = Vector2(-100, 0)
+node_connections = [&"output", 0, &"freeze", &"freeze", 0, &"idle"]
+
+[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_stunned"]
+animation = &"stunned"
+
+[resource]
+states/attack1/node = SubResource("AnimationNodeAnimation_attack1")
+states/attack1/position = Vector2(250, 360)
+states/attack2/node = SubResource("AnimationNodeAnimation_attack2")
+states/attack2/position = Vector2(430, 360)
+states/attack3/node = SubResource("AnimationNodeAnimation_attack3")
+states/attack3/position = Vector2(610, 360)
+states/hit/node = SubResource("AnimationNodeAnimation_hit")
+states/hit/position = Vector2(430, 240)
+states/idle/node = SubResource("AnimationNodeAnimation_idle")
+states/idle/position = Vector2(250, 240)
+states/move/node = SubResource("AnimationNodeBlendTree_move")
+states/move/position = Vector2(250, 100)
+states/stunned/node = SubResource("AnimationNodeAnimation_stunned")
+states/stunned/position = Vector2(610, 240)

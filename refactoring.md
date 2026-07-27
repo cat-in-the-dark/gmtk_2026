@@ -82,11 +82,17 @@ godot --headless --path . --export-debug Web \
 - Pixel-perfect настройка шрифта `deltarune.ttf` завершена 2026-07-27:
   отключены antialiasing, hinting и subpixel positioning, а `Label3D`
   переведены на nearest-фильтрацию и размеры, кратные нативным `10 px`.
-- Этап 3 с явными collision layers, Hurtbox/Hitbox и animation-driven окнами
-  атак завершён 2026-07-27.
+- Gameplay-часть этапа 3 с явными collision layers, Hurtbox/Hitbox и
+  animation-driven окнами атак завершена 2026-07-27; отдельный
+  FPS/one-hit test target в текущем репозитории отсутствует.
 - Gameplay tuning от 2026-07-28: глубина hitbox обеих рук игрока увеличена
   с `1.3` до `1.5`, а окно ввода следующего удара в combo увеличено на 10% —
   с `0.20` до `0.22` секунды.
+- Этап 4 с единым `FighterState`, централизованными переходами и
+  `AnimationTree` как presentation layer завершён 2026-07-28.
+- Исправление этапа 4 от 2026-07-28: ввод атаки во время dash/hit больше не
+  проверяет combo window с пустым `active_attack`; проверка также защищена
+  собственным state guard и покрыта integration-сценарием.
 
 ## Текущее устройство проекта
 
@@ -162,11 +168,12 @@ actors/player/player.tscn
         ├── BodyCollision
         ├── Hurtbox
         ├── frog.glb
-        │   ├── AnimationPlayer (physics callback)
+        │   ├── AnimationPlayer (source clips for AnimationTree)
         │   ├── visual hierarchy
         │   ├── LeftHandHitbox
         │   └── RightHandHitbox
-        └── AttackWindowPlayer (physics callback)
+        ├── AttackWindowPlayer (physics callback)
+        └── AnimationTree (physics callback)
 ```
 
 Враг:
@@ -178,11 +185,12 @@ actors/enemy/enemy.tscn
         ├── BodyCollision
         ├── Hurtbox
         ├── duck.glb
-        │   ├── AnimationPlayer (physics callback)
+        │   ├── AnimationPlayer (source clips for AnimationTree)
         │   ├── visual hierarchy
         │   ├── LeftHandHitbox
         │   └── RightHandHitbox
-        └── AttackWindowPlayer (physics callback)
+        ├── AttackWindowPlayer (physics callback)
+        └── AnimationTree (physics callback)
 ```
 
 Обе сцены используют `actors/fighter/fighter.gd` как общую базовую логику. Корневой скрипт
@@ -229,24 +237,33 @@ attack2: LeftHandHitbox,  0.033333–0.133333 s
 attack3: обе руки,        0.066667–0.233333 s
 ```
 
-Импортированный model `AnimationPlayer` и отдельный `AttackWindowPlayer`
-работают в physics callback. `Fighter.hit_bodies` остаётся общей one-hit
-таблицей на всю атаку, поэтому две руки не могут дважды поразить одну цель.
+Импортированный model `AnimationPlayer` является источником клипов для
+`AnimationTree`. `AnimationTree` и отдельный `AttackWindowPlayer` работают в
+physics callback. В wrapper-сцене `AttackWindowPlayer` расположен перед
+`AnimationTree`, чтобы при старте следующего combo-удара из callback завершения
+оба проигрывателя начали новый клип на одном следующем physics frame.
+`Fighter.hit_bodies` остаётся общей one-hit таблицей на всю атаку, поэтому две
+руки не могут дважды поразить одну цель.
 
 Friendly fire определяется `Fighter.Faction`, а не scene group. Ящики
 реализуют типизированный `AttackReceiver3D`. Domino-механика намеренно оставляет
 отдельный `intersect_shape`, но запрос ограничен слоем `FighterBody` и типом
 `Enemy`.
 
-Регрессионная проверка запускается командой:
+Проверка state/animation integration запускается командой:
 
 ```sh
-make test-combat
+make test-fighter-state
 ```
 
-Она проверяет реальное попадание каждой из трёх атак и границы окна при лимитах
-30, 60 и 120 FPS, physics callback обоих AnimationPlayer и общий one-hit для
-двух рук. Каталог `tests/` исключён из Web export.
+Она проверяет завершение и прерывание attack/dash/charge/stun, очистку forced
+movement, запрещённые переходы, соответствие gameplay-state состоянию
+`AnimationTree` и loop-настройки presentation graph. Каталог `tests/` исключён
+из Web export.
+
+Важно: ранее описанный target `make test-combat` отсутствует в текущем
+репозитории. Реальные границы hitbox windows при 30/60/120 FPS и общий one-hit
+двух рук сейчас не покрыты отдельной автоматической проверкой.
 
 ### Остальные сцены
 
@@ -313,8 +330,8 @@ knockback и процедурной походки. Разделение на `F
 
 ### Текущее поведение
 
-`Fighter._ready()` переводит импортированный model `AnimationPlayer` в physics
-callback. `AttackWindowPlayer` также работает в physics callback. Ручной
+`AnimationTree`, управляющий импортированным model `AnimationPlayer`, и
+`AttackWindowPlayer` работают в physics callback. Ручной
 `Fighter._check_attack_hits()` удалён, а `AttackHitbox` получает overlaps от
 physics server через сигналы `Area3D`.
 
@@ -343,13 +360,13 @@ frames. На нестабильном или низком FPS физика мо�
 ### Реализованное изменение
 
 - Model animation и hitbox window используют physics callback.
-- `make test-combat` прогоняет реальные попадания всех трёх атак при лимитах
-  30, 60 и 120 FPS.
 - One-hit registry общий для обеих рук и очищается только при старте следующей
   атаки.
 - Текущие короткие траектории надёжно покрываются `Area3D`; если скорость или
   размер персонажей заметно изменятся, следующим усилением должен стать sweep
   внутри `AttackHitbox`, а не возврат query в `Fighter`.
+- Автоматическая FPS/one-hit проверка, ранее описанная как `make test-combat`,
+  отсутствует в текущем репозитории и остаётся незакрытой частью validation.
 
 ### Критерий готовности
 
@@ -403,56 +420,11 @@ Fighter
 
 ## P1. Неявная машина состояний из пересекающихся флагов
 
+Статус: устранено на этапе 4.
+
 ### Текущее поведение
 
-Состояние бойца распределено между:
-
-```text
-is_attacking
-is_hit
-active_attack
-knockback_velocity
-forced_movement_active
-bounce_time_left
-is_eliminated
-```
-
-Игрок добавляет:
-
-```text
-attack_buffered
-is_dashing
-dash_time_left
-dash_cooldown_left
-```
-
-Враг добавляет:
-
-```text
-is_charging_attack
-stun_time_left
-is_dashing
-dash_time_left
-dash_cooldown_left
-domino_knockback_active
-```
-
-Допустимость действий частично определяется виртуальным `is_busy()`.
-
-### Риск
-
-Допустимые и запрещённые комбинации нигде не заданы явно. При добавлении блока,
-прыжка, смерти, особых атак или новых реакций станет легко получить:
-
-- dash и hit одновременно;
-- незавершённую forced movement;
-- застрявший `is_attacking`;
-- анимацию, не соответствующую gameplay-state;
-- переход в idle до завершения stun.
-
-### Требуемое изменение
-
-Добавить явное gameplay-состояние:
+`Fighter` содержит ровно одно основное gameplay-состояние:
 
 ```gdscript
 enum FighterState {
@@ -461,30 +433,39 @@ enum FighterState {
     ATTACK,
     HIT,
     DASH,
+    CHARGE,
     STUNNED,
     KNOCKBACK,
     ELIMINATED,
 }
 ```
 
-Необязательно переносить всю логику в отдельный объект State. Для этого
-проекта достаточно:
+Все изменения проходят через `_change_state()`. Допустимые переходы заданы в
+`ALLOWED_STATE_TRANSITIONS`, а `_enter_state()`/`_exit_state()` централизуют
+cleanup. Player и Enemy используют hooks `_on_state_entered()` и
+`_on_state_exited()` для runtime-данных dash и charge.
 
-- `state: FighterState`;
-- `_enter_state(next_state, context)`;
-- `_exit_state(previous_state)`;
-- явной таблицы допустимых переходов;
-- отдельных runtime-данных для атаки, dash и knockback.
+`is_attacking`, `is_hit` и `is_eliminated` сохранены только как read-only
+проекции текущего состояния для понятных проверок. Отдельные mutable-флаги
+`is_dashing` и `is_charging_attack` удалены. Таймеры, combo buffer,
+knockback-вектор и domino registry остаются данными активной механики, но не
+являются конкурирующими основными состояниями.
 
-`AnimationTree` должен отображать gameplay-state, а не быть независимой второй
-машиной состояний.
+### Устранённый риск
+
+- dash, charge, hit, stun и attack не могут быть активны одновременно;
+- выход из dash всегда очищает forced movement;
+- выход из charge всегда очищает charge timer;
+- attack interruption закрывает hitbox window;
+- `ELIMINATED` не имеет исходящих переходов;
+- невозможные переходы отклоняются общей таблицей.
 
 ### Критерий готовности
 
 - В каждый момент времени у бойца одно основное состояние.
 - Начало нового состояния гарантированно очищает данные предыдущего.
 - Невозможные переходы отклоняются централизованно.
-- Прерывание attack/dash/stun покрыто тестами.
+- Прерывание attack/dash/charge/stun покрыто `make test-fighter-state`.
 
 ## P1. Гонка между Victory и Game Over
 
@@ -688,28 +669,31 @@ Enemy каждый physics frame вычисляет прямое направл�
 
 ## P2. Анимационная конфигурация исправляется во время runtime
 
+Статус: устранено на этапе 4.
+
 ### Текущее поведение
 
-- `actors/enemy/enemy.gd::_ready()` меняет loop mode у `stunned`.
-- `Fighter._on_model_animation_finished()` вручную повторно запускает `idle`.
-- `stunned` используется также как визуальная поза dash.
-- Duck `attack_charge` длится около 0.0417 секунды, но charge-state длится 0.5
-  секунды и удерживает последний кадр.
+Frog и Duck wrapper-сцены содержат отдельный `AnimationTree`, связанный с
+импортированным model `AnimationPlayer`. Gameplay-state однозначно отображается
+в presentation-state:
 
-### Риск
+```text
+IDLE                  → idle
+MOVE                  → move (idle pose через TimeScale = 0)
+ATTACK                → active_attack
+HIT, KNOCKBACK        → hit
+DASH, STUNNED         → stunned
+CHARGE                → attack_charge
+```
 
-- Поведение анимаций распределено между импортом и GDScript.
-- Название `stunned` используется для нескольких семантически разных состояний.
-- Изменение импортированной общей Animation resource во время runtime является
-  неявным глобальным действием.
+`idle`, а для Duck также `stunned`, зациклены custom timeline настройками
+`AnimationNodeAnimation` в `.tres`. Импортированные `Animation` resources
+runtime-код больше не изменяет. Состояние `move` использует замороженную
+idle-позу и не вмешивается в процедурную постановку ног.
 
-### Требуемое изменение
-
-- Настроить loop для `idle` и нужных циклов в import/wrapper scene.
-- Добавить `AnimationTree` с состояниями presentation layer.
-- При необходимости создать отдельные названия/позы `dash`, `stunned`,
-  `charge`.
-- Не мутировать общие импортированные Animation resources из каждого Enemy.
+Клип `stunned` пока намеренно переиспользуется как поза dash, поскольку
+отдельной dash-анимации в моделях нет. Duck `attack_charge` остаётся коротким
+one-shot и удерживает финальную позу до окончания gameplay timer.
 
 ### Критерий готовности
 
@@ -1119,7 +1103,7 @@ Victory и Game Over создаются как inherited scenes или как о
 
 ### Этап 3. Collision model и hitbox windows
 
-Статус: завершён.
+Статус: gameplay-часть завершена; отдельные FPS/one-hit tests отсутствуют.
 
 1. Именовать physics layers.
 2. Добавить Hurtbox и Hitbox.
@@ -1132,6 +1116,8 @@ Victory и Game Over создаются как inherited scenes или как о
 Результат: визуальный контакт и gameplay hit используют одну временную шкалу.
 
 ### Этап 4. Явное состояние и AnimationTree
+
+Статус: завершён.
 
 1. Добавить `FighterState`.
 2. Централизовать enter/exit.
@@ -1230,6 +1216,7 @@ Victory и Game Over создаются как inherited scenes или как о
 
 ```sh
 make lint
+make test-fighter-state
 godot --headless --path . --quit-after 300
 ```
 
@@ -1255,13 +1242,7 @@ godot --headless --path . --export-debug Web \
 Для двухдневного jam-проекта исходная база качественная: она читаема, компактна
 и использует основные механизмы Godot без лишней инфраструктуры.
 
-Главный технический долг сосредоточен не в объёме кода, а в координации:
-
-1. анимация и physics hit detection работают в разных циклах;
-2. hit window не описан данными анимации;
-3. gameplay-state распределён по множеству флагов;
-4. завершение матча имеет двух владельцев;
-5. Fighter связан с внутренней структурой импортированных моделей.
-
-Первые четыре этапа плана дают наибольший прирост корректности и должны быть
-выполнены раньше визуальной полировки и очистки ассетов.
+Первые четыре этапа плана завершены. Главный оставшийся архитектурный долг —
+связь `Fighter` с глубокими путями внутри импортированных GLB. Следующим этапом
+должен быть `FighterRig` и общая сцена бойца, затем data-driven конфигурация
+баланса.

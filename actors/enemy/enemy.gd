@@ -13,10 +13,8 @@ extends Fighter
 @export var dash_cooldown_jitter := 0.75
 
 var target: Node3D
-var is_charging_attack := false
 var attack_charge_time_left := 0.0
 var stun_time_left := 0.0
-var is_dashing := false
 var dash_time_left := 0.0
 var dash_cooldown_left := 0.0
 var dash_direction := Vector3.ZERO
@@ -33,12 +31,6 @@ func _ready() -> void:
 	domino_proximity_shape = body_capsule.duplicate() as CapsuleShape3D
 	domino_proximity_shape.radius *= domino_area_scale
 	domino_proximity_shape.height *= domino_area_scale
-	var stunned_animation := model_animations.get_animation(&"stunned")
-	if stunned_animation != null:
-		stunned_animation.loop_mode = Animation.LOOP_LINEAR
-	var charge_animation := model_animations.get_animation(&"attack_charge")
-	if charge_animation != null:
-		charge_animation.loop_mode = Animation.LOOP_NONE
 	target = get_tree().get_first_node_in_group("player") as Node3D
 
 
@@ -48,12 +40,10 @@ func _physics_process(delta: float) -> void:
 	if target == null:
 		target = get_tree().get_first_node_in_group("player") as Node3D
 	if not is_on_floor():
-		if is_dashing:
-			_finish_dash()
-		if is_charging_attack:
-			_cancel_attack_charge()
 		move_direction = Vector3.ZERO
-	elif is_charging_attack:
+		if state == FighterState.DASH or state == FighterState.CHARGE:
+			_change_state(FighterState.IDLE)
+	elif state == FighterState.CHARGE:
 		move_direction = Vector3.ZERO
 		_update_attack_charge(delta)
 	elif target != null and not is_busy():
@@ -70,8 +60,8 @@ func _physics_process(delta: float) -> void:
 	else:
 		move_direction = Vector3.ZERO
 	super._physics_process(delta)
-	if is_dashing and not is_on_floor():
-		_finish_dash()
+	if state == FighterState.DASH and not is_on_floor():
+		_change_state(FighterState.IDLE)
 	else:
 		_update_dash_after_movement(delta)
 	if domino_knockback_active:
@@ -79,23 +69,11 @@ func _physics_process(delta: float) -> void:
 		if not _is_knocked_back():
 			domino_knockback_active = false
 			domino_hit_bodies.clear()
-	_update_stunned_animation()
-
-
-func is_busy() -> bool:
-	return (
-		super.is_busy()
-		or is_charging_attack
-		or stun_time_left > 0.0
-		or is_dashing
-	)
 
 
 func receive_hit(attacker_position: Vector3, attack_name: StringName = &"") -> void:
-	if is_dashing:
-		_finish_dash()
-	if is_charging_attack:
-		_cancel_attack_charge()
+	if is_eliminated:
+		return
 	var is_strong_attack := attack_name == &"attack3"
 	if is_strong_attack:
 		_start_domino_knockback(attacker_position)
@@ -104,10 +82,8 @@ func receive_hit(attacker_position: Vector3, attack_name: StringName = &"") -> v
 
 
 func receive_domino_hit(attacker_position: Vector3, source_enemy: Node) -> void:
-	if is_dashing:
-		_finish_dash()
-	if is_charging_attack:
-		_cancel_attack_charge()
+	if is_eliminated:
+		return
 	_start_domino_knockback(attacker_position, source_enemy, false)
 
 
@@ -143,23 +119,22 @@ func _spread_domino_knockback() -> void:
 
 
 func _start_attack_charge() -> void:
-	is_charging_attack = true
 	attack_charge_time_left = attack_charge_duration
-	model_animations.play(&"attack_charge")
+	_change_state(FighterState.CHARGE)
 
 
 func _update_attack_charge(delta: float) -> void:
 	attack_charge_time_left = maxf(attack_charge_time_left - delta, 0.0)
 	if attack_charge_time_left > 0.0:
 		return
-	is_charging_attack = false
 	if not start_attack(&"attack1"):
 		_cancel_attack_charge()
 
 
 func _cancel_attack_charge() -> void:
-	is_charging_attack = false
 	attack_charge_time_left = 0.0
+	if state == FighterState.CHARGE:
+		_change_state(_locomotion_state())
 
 
 func _try_start_dash(offset: Vector3) -> bool:
@@ -174,17 +149,12 @@ func _try_start_dash(offset: Vector3) -> bool:
 	dash_direction = offset.normalized()
 	if dash_direction == Vector3.ZERO:
 		dash_direction = Vector3.RIGHT.rotated(Vector3.UP, rotation.y)
-	is_dashing = true
-	dash_time_left = dash_duration
-	forced_movement_active = true
-	forced_movement_velocity = dash_direction * dash_speed
 	face_direction(dash_direction)
-	model_animations.play(&"stunned")
-	return true
+	return _change_state(FighterState.DASH)
 
 
 func _update_dash_before_movement(delta: float) -> void:
-	if is_dashing:
+	if state == FighterState.DASH:
 		var dash_frame_fraction := minf(dash_time_left / delta, 1.0)
 		forced_movement_velocity = dash_direction * dash_speed * dash_frame_fraction
 	else:
@@ -192,41 +162,47 @@ func _update_dash_before_movement(delta: float) -> void:
 
 
 func _update_dash_after_movement(delta: float) -> void:
-	if not is_dashing:
+	if state != FighterState.DASH:
 		return
 	dash_time_left = maxf(dash_time_left - delta, 0.0)
 	if dash_time_left <= 0.0:
-		_finish_dash()
-
-
-func _finish_dash() -> void:
-	is_dashing = false
-	dash_time_left = 0.0
-	dash_direction = Vector3.ZERO
-	forced_movement_active = false
-	forced_movement_velocity = Vector3.ZERO
-	velocity.x = 0.0
-	velocity.z = 0.0
-	if stun_time_left <= 0.0 and model_animations.assigned_animation == &"stunned":
-		model_animations.play(&"idle")
+		_change_state(_locomotion_state())
 
 
 func _update_stun(delta: float) -> void:
 	if stun_time_left <= 0.0:
 		return
 	stun_time_left = maxf(stun_time_left - delta, 0.0)
-	if stun_time_left <= 0.0 and model_animations.assigned_animation == &"stunned":
-		model_animations.play(&"idle")
+	if stun_time_left <= 0.0 and state == FighterState.STUNNED:
+		if _is_knocked_back():
+			_change_state(FighterState.KNOCKBACK)
+		else:
+			_change_state(_locomotion_state())
 
 
-func _update_stunned_animation() -> void:
-	if (
-		stun_time_left <= 0.0
-		or is_hit
-		or (
-			model_animations.assigned_animation == &"stunned"
-			and model_animations.is_playing()
-		)
-	):
-		return
-	model_animations.play(&"stunned")
+func _state_after_hit() -> FighterState:
+	if stun_time_left > 0.0:
+		return FighterState.STUNNED
+	return super._state_after_hit()
+
+
+func _on_state_entered(next_state: FighterState, previous_state: FighterState) -> void:
+	super._on_state_entered(next_state, previous_state)
+	if next_state == FighterState.DASH:
+		dash_time_left = dash_duration
+		forced_movement_active = true
+		forced_movement_velocity = dash_direction * dash_speed
+
+
+func _on_state_exited(previous_state: FighterState, next_state: FighterState) -> void:
+	super._on_state_exited(previous_state, next_state)
+	match previous_state:
+		FighterState.DASH:
+			dash_time_left = 0.0
+			dash_direction = Vector3.ZERO
+			forced_movement_active = false
+			forced_movement_velocity = Vector3.ZERO
+			velocity.x = 0.0
+			velocity.z = 0.0
+		FighterState.CHARGE:
+			attack_charge_time_left = 0.0

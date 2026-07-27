@@ -5,6 +5,7 @@
 [ext_resource type="Script" uid="uid://c6hwqqgtogoor" path="res://actors/combat/attack_hitbox.gd" id="4_hitbox"]
 [ext_resource type="PackedScene" uid="uid://bx0bt2mq2jr51" path="res://actors/player/frog/frog.glb" id="5_frog"]
 [ext_resource type="AnimationLibrary" path="res://actors/combat/attack_windows.tres" id="6_windows"]
+[ext_resource type="AnimationNodeStateMachine" path="res://actors/player/frog/frog_animation_tree.tres" id="7_animation_tree"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_body"]
 
@@ -62,5 +63,11 @@ shape = SubResource("BoxShape3D_right_hand")
 [node name="AttackWindowPlayer" type="AnimationPlayer" parent="." unique_id=990178877]
 callback_mode_process = 0
 libraries/ = ExtResource("6_windows")
+
+[node name="AnimationTree" type="AnimationTree" parent="."]
+tree_root = ExtResource("7_animation_tree")
+anim_player = NodePath("../skin3/blockbench_export/AnimationPlayer")
+callback_mode_process = 0
+parameters/move/freeze/scale = 0.0
 
 [editable path="skin3/blockbench_export"]
