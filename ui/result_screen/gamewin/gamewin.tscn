@@ -29,10 +29,12 @@ size = 6.0
 [node name="GameWinLabel" type="Label3D" parent="." unique_id=1302034898]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 7.8, -4)
 billboard = 1
+pixel_size = 0.025
+texture_filter = 0
 text = "VICTORY"
 font = ExtResource("2_mbu2q")
-font_size = 192
-outline_size = 32
+font_size = 40
+outline_size = 4
 
 [node name="Interface" type="CanvasLayer" parent="." unique_id=831032125]
 

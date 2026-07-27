@@ -79,6 +79,9 @@ godot --headless --path . --export-debug Web \
   от `EnemyCounter`.
 - Restart внутри result-сцен пока остаётся локальным и не входит в завершение
   активного матча.
+- Pixel-perfect настройка шрифта `deltarune.ttf` завершена 2026-07-27:
+  отключены antialiasing, hinting и subpixel positioning, а `Label3D`
+  переведены на nearest-фильтрацию и размеры, кратные нативным `10 px`.
 
 ## Текущее устройство проекта
 
@@ -107,6 +110,41 @@ main (Node3D, game/game.gd)
 `EnemySpawner` динамически создаёт врагов как детей корня `main`.
 `GameSession` подписан на устранение игрока и завершение спавнера, публикует
 состояние счётчика и централизованно завершает активный матч.
+
+### Pixel-perfect типографика
+
+`ui/theme/fonts/deltarune.ttf` является векторным pixel-font с нативным
+дизайн-размером `10 px`. Для него зафиксированы следующие инварианты:
+
+- font antialiasing, hinting и subpixel positioning отключены;
+- MSDF и mipmaps не используются;
+- oversampling зафиксирован в `1.0`;
+- 2D `Control` использует размер `10 px` или его целое кратное без
+  нецелочисленного `scale`;
+- все `Label3D` явно используют `texture_filter = Nearest`;
+- размер шрифта у `Label3D` кратен `10`, а физический размер подбирается через
+  `pixel_size`, а не через чрезмерный `font_size` с последующим уменьшением.
+
+Текущие согласованные пары для ортографических камер и базового viewport
+`320×240`:
+
+```text
+EnemyCounter: font_size 100, pixel_size 0.05, outline 10, Camera3D.size 12
+Result title: font_size 40, pixel_size 0.025, outline 4, Camera3D.size 6
+RestartLabel: font_size 10, Control scale 1
+```
+
+Если меняются размер viewport или `Camera3D.size`, `pixel_size` нужно
+пересчитать. Для billboard, параллельного экрану, базовая формула:
+
+```text
+pixel_size = Camera3D.size / viewport_height
+```
+
+Для текста, лежащего в 3D-плоскости под углом, абсолютно одинаковые экранные
+пиксели недостижимы из-за проекции, но бинарный растр и nearest-фильтрация
+убирают серые ореолы. Если счётчику потребуется строгая экранная сетка, его
+следует перенести в `CanvasLayer` как обычный `Label`.
 
 ### Персонажи
 

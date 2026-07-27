@@ -98,10 +98,11 @@ mesh = SubResource("BoxMesh_apnw2")
 
 [node name="EnemyCounter" type="Label3D" parent="level" unique_id=290163380]
 transform = Transform3D(0.70710677, 0.70710677, 3.090862e-08, 0, -4.3711385e-08, 0.9999999, 0.70710677, -0.70710677, -3.090862e-08, 0, 0.0052490234, 0)
-pixel_size = 0.008
+pixel_size = 0.05
+texture_filter = 0
 text = "21"
 font = ExtResource("6_7mycd")
-font_size = 640
-outline_size = 72
+font_size = 100
+outline_size = 10
 script = ExtResource("9_counter")
 game_session_path = NodePath("../../GameSession")

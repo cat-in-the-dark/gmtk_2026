@@ -23,10 +23,12 @@ size = 6.0
 [node name="GameOverLabel" type="Label3D" parent="." unique_id=1271082283]
 position = Vector3(0, 7.8, -4)
 billboard = 1
+pixel_size = 0.025
+texture_filter = 0
 text = "GAME OVER"
 font = ExtResource("3_font")
-font_size = 192
-outline_size = 32
+font_size = 40
+outline_size = 4
 
 [node name="Interface" type="CanvasLayer" parent="."]
 
