@@ -98,6 +98,9 @@ godot --headless --path . --export-debug Web \
 - Этап 6 с `FighterStats`, `AttackDefinition`, `AttackSequence`,
   `EnemyConfig` и `WaveConfig` завершён 2026-07-28. Значения баланса перенесены
   в `.tres`, дублирующие scene overrides и dynamic `enemy.set()` удалены.
+- Этап 8 с очисткой asset metadata и dependency-based Web export завершён
+  2026-07-28. Исходники и marketing media сохранены, из runtime удалён
+  `camera_follow.gd`, а release `.pck` проверен отдельным запуском.
 
 ## Текущее устройство проекта
 
@@ -255,16 +258,8 @@ Friendly fire определяется `Fighter.Faction`, а не scene group. �
 отдельный `intersect_shape`, но запрос ограничен слоем `FighterBody` и типом
 `Enemy`.
 
-Проверка data-driven конфигурации запускается командой:
-
-```sh
-make test-data-config
-```
-
-Она проверяет загрузку и validation всех default `.tres`, неизменность combo,
-тайминга `0.22`, domino-флага, 21 врага, размеров волн, включения dash с третьей
-волны и типизированную конфигурацию `Enemy`. Каталог `tests/` исключён из Web
-export.
+Custom Resources валидируются при `_ready()` владельцев. Отдельного
+`make test-data-config` в текущем репозитории нет.
 
 Важно: ранее описанные targets `make test-combat` и
 `make test-fighter-state` отсутствуют в текущем репозитории. Реальные границы
@@ -757,8 +752,7 @@ Combo `attack1 → attack2 → attack2 → attack3` описано
 
 - Выполнено: баланс меняется через `.tres`, не редактируя поведение.
 - Выполнено: значения больше не повторяются в скриптах и scene overrides.
-- Выполнено: невалидная конфигурация обнаруживается в `_ready()` и
-  `make test-data-config`.
+- Выполнено: невалидная конфигурация обнаруживается в `_ready()`.
 
 ## P2. Дублирование character scenes
 
@@ -878,53 +872,61 @@ physics-state. Желательно вынести смещение visual skin 
 
 ## P3. Runtime и source assets были смешаны
 
-### Подтверждённое поведение экспорта
+Статус: устранено на этапе 8.
 
-В `export_presets.cfg` установлен:
+### Текущее устройство
+
+`source_art/` и `docs/` содержат `.gdignore`. Исходные `.bbmodel`, standalone
+GLB, текстуры, screenshot, splash и `gameplay.mp4` сохранены в Git, но Godot их
+не сканирует и Web export их не включает. 30 устаревших `.import` рядом с этими
+файлами удалены; это только генерируемая import metadata, а не исходники.
+
+Неиспользуемый `world/camera/camera_follow.gd` и его UID удалены после
+повторной проверки ссылок. `.DS_Store` добавлен в project `.gitignore`.
+
+Web preset использует:
 
 ```text
-export_filter="all_resources"
+export_filter="scenes"
+export_files=[
+  game/game.tscn,
+  ui/result_screen/gameover/gameover.tscn,
+  ui/result_screen/gamewin/gamewin.tscn,
+]
 ```
 
-До реорганизации Web export фактически включал:
+`AttackReceiver3D` и `CollisionLayers3D` используются через глобальные
+`class_name`, поэтому Godot 4.7 не обнаружил их как scene dependencies. Они
+явно добавлены через `include_filter`. Это обязательно: без include export
+собирается успешно, но при запуске `.pck` получает parse errors.
 
-- `world/camera/camera_follow.gd`;
-- `actors/player/legacy/character.gd`;
-- `source_art/standalone_models/boot/boot.glb`;
-- отдельные модели из `source_art/standalone_models/hand/`;
-- импортированные текстуры из `source_art/blockbench/`;
-- `docs/media/screenshot1.png`;
-- `docs/media/splash.png`.
+### Сравнение Web release export
 
-`docs/media/gameplay.mp4` не был показан среди упакованных Godot resources, но он
-занимает около 8 MB в Git. Весь checkout вместе с `.git` на момент обзора был
-около 22 MB, из них `.git` около 11 MB.
+```text
+                              before       after
+PCK bytes                     314616        309560
+Storing File entries             179           175
+WASM bytes                   39513091      39513091
+```
 
-### Известные неиспользуемые или подозрительные файлы
+PCK уменьшился на 5056 bytes, или примерно 1.6%. Экономия небольшая, потому что
+`.gdignore` уже исключал крупные source/marketing assets до этапа 8. Главное
+изменение — manifest теперь формируется от трёх entry scenes и не захватывает
+будущие несвязанные runtime resources автоматически.
 
-- `world/camera/camera_follow.gd` не подключён ни к одной сцене.
-- `actors/player/legacy/character.gd` состоит из `extends "res://actors/player/player.gd"` и не
-  подключён к сцене.
-- Standalone-модели в `source_art/standalone_models/` не имеют найденных
-  runtime-ссылок.
-- `source_art/blockbench/` выглядит как source-art.
-- Screenshot, splash и gameplay video используются README/маркетингом, но не
-  основной игрой.
+Финальный manifest не содержит `source_art`, `docs/media`, `tests` и
+`world/camera`. Все 19 оставшихся runtime `.gd` присутствуют. Release `.pck`
+запущен отдельно через `--main-pack` на 600 кадров без script/runtime ошибок.
 
-### Требуемое изменение
-
-- Каталоги `game/`, `source_art/` и `docs/media/` уже разделены механической
-  реорганизацией; `source_art/` и `docs/` содержат `.gdignore`.
-- Выбрать экспорт только зависимостей используемых сцен или явный include.
-- Удалять файлы только после подтверждения владельца.
-- Рассмотреть Git LFS или release attachment для большого gameplay video, если
-  история репозитория продолжит расти.
+`docs/media/gameplay.mp4` по-прежнему занимает около 8 MB в Git. Git LFS или
+release attachment не вводились: это не уменьшило бы существующую историю без
+отдельной миграции и переписывания history.
 
 ### Критерий готовности
 
-- Export manifest не содержит dead scripts и source-art.
-- Marketing assets не импортируются Godot без необходимости.
-- Web build по-прежнему запускается.
+- Выполнено: export manifest не содержит dead scripts и source-art.
+- Выполнено: marketing assets не импортируются Godot.
+- Выполнено: Web release build и его `.pck` запускаются.
 
 ## P3. Нет тестов и CI
 
@@ -1165,6 +1167,8 @@ Victory и Game Over создаются как inherited scenes или как о
 
 ### Этап 8. Asset/export cleanup
 
+Статус: завершён.
+
 1. Получить подтверждение владельца на перемещение/удаление.
 2. Отделить source-art и docs media.
 3. Удалить или подключить dead scripts.
@@ -1218,7 +1222,6 @@ Victory и Game Over создаются как inherited scenes или как о
 
 ```sh
 make lint
-make test-data-config
 godot --headless --path . --quit-after 300
 ```
 
@@ -1244,7 +1247,7 @@ godot --headless --path . --export-debug Web \
 Для двухдневного jam-проекта исходная база качественная: она читаема, компактна
 и использует основные механизмы Godot без лишней инфраструктуры.
 
-Этапы 2, 3, 4 и 6 завершены; этапы 1 и 5 пропущены по решению владельца.
+Этапы 2, 3, 4, 6 и 8 завершены; этапы 1 и 5 пропущены по решению владельца.
 Главный оставшийся архитектурный долг — связь `Fighter` с глубокими путями
 внутри импортированных GLB, но возвращаться к нему без нового запроса не
 следует. Следующий запланированный этап — общий result screen и presentation
