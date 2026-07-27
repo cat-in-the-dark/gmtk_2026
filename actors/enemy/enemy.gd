@@ -1,3 +1,4 @@
+class_name Enemy
 extends Fighter
 
 @export var attack_range := 1.7
@@ -23,7 +24,7 @@ var domino_knockback_active := false
 var domino_hit_bodies: Dictionary = {}
 var domino_proximity_shape: CapsuleShape3D
 
-@onready var body_collision_shape: CollisionShape3D = $CollisionShape3D
+@onready var body_collision_shape: CollisionShape3D = $BodyCollision
 
 
 func _ready() -> void:
@@ -128,18 +129,17 @@ func _spread_domino_knockback() -> void:
 	var query := PhysicsShapeQueryParameters3D.new()
 	query.shape = domino_proximity_shape
 	query.transform = body_collision_shape.global_transform
-	query.collision_mask = collision_mask
+	query.collision_mask = CollisionLayers3D.FIGHTER_BODY
 	query.exclude = [get_rid()]
 	for hit in get_world_3d().direct_space_state.intersect_shape(query, 16):
-		var body := hit.get("collider") as Node
-		if body == null or not body.is_in_group(&"enemies"):
+		var enemy := hit.get("collider") as Enemy
+		if enemy == null:
 			continue
-		var body_id := body.get_instance_id()
+		var body_id := enemy.get_instance_id()
 		if domino_hit_bodies.has(body_id):
 			continue
 		domino_hit_bodies[body_id] = true
-		if body.has_method("receive_domino_hit"):
-			body.receive_domino_hit(global_position, self)
+		enemy.receive_domino_hit(global_position, self)
 
 
 func _start_attack_charge() -> void:
@@ -230,7 +230,3 @@ func _update_stunned_animation() -> void:
 	):
 		return
 	model_animations.play(&"stunned")
-
-
-func _can_attack_body(body: Node) -> bool:
-	return not body.is_in_group(&"enemies")

@@ -5,6 +5,7 @@
 
 [node name="Player" unique_id=1435815790 groups=["player"] instance=ExtResource("1_base")]
 script = ExtResource("2_player")
-combo_window = 0.2
+faction = 1
+combo_window = 0.22
 
 [editable path="skin3/blockbench_export"]

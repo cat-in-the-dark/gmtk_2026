@@ -2,8 +2,14 @@ class_name Fighter
 extends CharacterBody3D
 
 signal attack_finished
+signal attack_landed(target: Node3D)
 signal eliminated
 
+enum Faction {
+	NEUTRAL,
+	PLAYER,
+	ENEMY,
+}
 
 class Leg:
 	var root: Node3D
@@ -49,6 +55,7 @@ class Leg:
 @export var gravity_scale := 1.0
 @export var knockback_speed := 15.0
 @export var knockback_drag := 22.0
+@export var faction: Faction = Faction.NEUTRAL
 
 var move_direction := Vector3.ZERO
 var is_attacking := false
@@ -69,9 +76,10 @@ var hit_bodies: Dictionary = {}
 
 @onready var skin: Node3D = $skin3/blockbench_export
 @onready var model_animations: AnimationPlayer = skin.get_node("AnimationPlayer")
-@onready var hand_hit_areas: Array[Area3D] = [
-	skin.get_node("root/arm_left/hand_left/hand_left_mesh/Area3D"),
-	skin.get_node("root/arm_right/hand_right/hand_right_mesh/Area3D")
+@onready var attack_window_player: AnimationPlayer = $AttackWindowPlayer
+@onready var hand_hitboxes: Array[AttackHitbox] = [
+	skin.get_node("root/arm_left/hand_left/hand_left_mesh/LeftHandHitbox"),
+	skin.get_node("root/arm_right/hand_right/hand_right_mesh/RightHandHitbox")
 ]
 @onready var left_leg := Leg.new(
 	skin.get_node("root/left_leg"),
@@ -89,7 +97,13 @@ var hit_bodies: Dictionary = {}
 
 func _ready() -> void:
 	skin_rest_position = skin.position
+	model_animations.callback_mode_process = (
+		AnimationMixer.ANIMATION_CALLBACK_MODE_PROCESS_PHYSICS
+	)
 	model_animations.animation_finished.connect(_on_model_animation_finished)
+	for hitbox in hand_hitboxes:
+		hitbox.configure(self)
+	_close_attack_hitboxes()
 	_update_leg(left_leg)
 	_update_leg(right_leg)
 	_play_idle_if_needed()
@@ -141,7 +155,6 @@ func _physics_process(delta: float) -> void:
 	_update_leg_step(right_leg, delta)
 	_update_leg(left_leg)
 	_update_leg(right_leg)
-	_check_attack_hits()
 	if not is_busy():
 		_play_idle_if_needed()
 
@@ -155,6 +168,7 @@ func _check_elimination_collision() -> bool:
 		var collider := get_slide_collision(collision_index).get_collider() as Node
 		if collider != null and collider.is_in_group(&"kill_floor"):
 			is_eliminated = true
+			_stop_attack_window()
 			eliminated.emit()
 			_on_reached_kill_floor()
 			return true
@@ -168,10 +182,18 @@ func _on_reached_kill_floor() -> void:
 func start_attack(animation_name: StringName) -> bool:
 	if is_busy() or not is_on_floor():
 		return false
+	if not model_animations.has_animation(animation_name):
+		push_error("Missing model attack animation: %s" % animation_name)
+		return false
+	if not attack_window_player.has_animation(animation_name):
+		push_error("Missing hitbox window animation: %s" % animation_name)
+		return false
 	is_attacking = true
 	active_attack = animation_name
 	hit_bodies.clear()
+	_close_attack_hitboxes()
 	model_animations.play(animation_name)
+	attack_window_player.play(animation_name)
 	return true
 
 
@@ -189,6 +211,7 @@ func _start_hit(
 		return
 	if is_attacking:
 		_on_attack_interrupted()
+		_stop_attack_window()
 	is_attacking = false
 	is_hit = true
 	active_attack = &""
@@ -222,6 +245,7 @@ func _on_model_animation_finished(animation_name: StringName) -> void:
 		is_hit = false
 		_play_idle_if_needed()
 	elif is_attacking and animation_name == active_attack:
+		_stop_attack_window()
 		is_attacking = false
 		active_attack = &""
 		attack_finished.emit()
@@ -235,37 +259,45 @@ func _play_idle_if_needed() -> void:
 		model_animations.play(&"idle")
 
 
-func _check_attack_hits() -> void:
-	if not is_attacking:
+func try_attack_hurtbox(hurtbox: FighterHurtbox) -> void:
+	if not is_attacking or hurtbox.fighter == null:
 		return
-	var space_state := get_world_3d().direct_space_state
-	for hit_area in hand_hit_areas:
-		hit_area.force_update_transform()
-		var shape_node := hit_area.get_node_or_null("CollisionShape3D") as CollisionShape3D
-		if shape_node == null or shape_node.disabled or shape_node.shape == null:
-			continue
-		shape_node.force_update_transform()
-		var query := PhysicsShapeQueryParameters3D.new()
-		query.shape = shape_node.shape
-		query.transform = shape_node.global_transform
-		query.collision_mask = hit_area.collision_mask
-		query.exclude = [get_rid()]
-		for hit in space_state.intersect_shape(query, 16):
-			var body := hit.get("collider") as Node
-			if body == null or not _can_attack_body(body):
-				continue
-			var body_id := body.get_instance_id()
-			if hit_bodies.has(body_id):
-				continue
-			hit_bodies[body_id] = true
-			if body.has_method("receive_hit"):
-				body.receive_hit(global_position, active_attack)
-			elif body.has_method("hit"):
-				body.hit()
+	var target := hurtbox.fighter
+	if (
+		target == self
+		or target.is_eliminated
+		or faction == Faction.NEUTRAL
+		or target.faction == faction
+		or not _register_attack_target(target)
+	):
+		return
+	target.receive_hit(global_position, active_attack)
+	attack_landed.emit(target)
 
 
-func _can_attack_body(_body: Node) -> bool:
+func try_attack_receiver(receiver: AttackReceiver3D) -> void:
+	if not is_attacking or not _register_attack_target(receiver):
+		return
+	receiver.receive_attack(global_position, active_attack)
+	attack_landed.emit(receiver)
+
+
+func _register_attack_target(target: Node3D) -> bool:
+	var target_id := target.get_instance_id()
+	if hit_bodies.has(target_id):
+		return false
+	hit_bodies[target_id] = true
 	return true
+
+
+func _stop_attack_window() -> void:
+	attack_window_player.stop()
+	_close_attack_hitboxes()
+
+
+func _close_attack_hitboxes() -> void:
+	for hitbox in hand_hitboxes:
+		hitbox.deactivate()
 
 
 func _try_start_step(direction: Vector3) -> void:

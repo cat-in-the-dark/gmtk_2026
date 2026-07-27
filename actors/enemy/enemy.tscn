@@ -5,6 +5,7 @@
 
 [node name="Enemy" unique_id=950568139 groups=["enemies"] instance=ExtResource("1_base")]
 script = ExtResource("2_enemy")
+faction = 2
 attack_range = 1.7
 attack_charge_duration = 0.5
 domino_area_scale = 1.5

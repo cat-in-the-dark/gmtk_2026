@@ -1,39 +1,66 @@
-[gd_scene format=3]
+[gd_scene format=3 uid="uid://d102nvj3gyyjc"]
 
-[ext_resource type="Script" path="res://actors/fighter/fighter.gd" id="2_controller"]
-[ext_resource type="PackedScene" path="res://actors/player/frog/frog.glb" id="5_frog"]
+[ext_resource type="Script" uid="uid://c08r7exj0m2wf" path="res://actors/fighter/fighter.gd" id="2_controller"]
+[ext_resource type="Script" uid="uid://w47qjpasl55b" path="res://actors/combat/fighter_hurtbox.gd" id="3_hurtbox"]
+[ext_resource type="Script" uid="uid://c6hwqqgtogoor" path="res://actors/combat/attack_hitbox.gd" id="4_hitbox"]
+[ext_resource type="PackedScene" uid="uid://bx0bt2mq2jr51" path="res://actors/player/frog/frog.glb" id="5_frog"]
+[ext_resource type="AnimationLibrary" path="res://actors/combat/attack_windows.tres" id="6_windows"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_body"]
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_left_hand"]
-size = Vector3(0.8, 0.8, 1.3)
+size = Vector3(0.8, 0.8, 1.5)
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_right_hand"]
-size = Vector3(0.8, 0.8, 1.3)
+size = Vector3(0.8, 0.8, 1.5)
 
-[node name="Character" type="CharacterBody3D"]
+[node name="Character" type="CharacterBody3D" unique_id=21223586]
+collision_layer = 2
+collision_mask = 51
 script = ExtResource("2_controller")
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+[node name="BodyCollision" type="CollisionShape3D" parent="." unique_id=1243354755]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
 shape = SubResource("CapsuleShape3D_body")
 
-[node name="skin3" type="Node3D" parent="."]
+[node name="Hurtbox" type="Area3D" parent="." unique_id=1037841849]
+collision_layer = 4
+collision_mask = 8
+monitoring = false
+script = ExtResource("3_hurtbox")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Hurtbox" unique_id=1408378848]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+shape = SubResource("CapsuleShape3D_body")
+
+[node name="skin3" type="Node3D" parent="." unique_id=1611114174]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.075, 0)
 
-[node name="blockbench_export" parent="skin3" instance=ExtResource("5_frog")]
+[node name="blockbench_export" parent="skin3" unique_id=1943459401 instance=ExtResource("5_frog")]
 
-[node name="Area3D" type="Area3D" parent="skin3/blockbench_export/root/arm_left/hand_left/hand_left_mesh"]
+[node name="LeftHandHitbox" type="Area3D" parent="skin3/blockbench_export/root/arm_left/hand_left/hand_left_mesh" parent_id_path=PackedInt32Array(1943459401, 36930345) index="0" unique_id=174838262]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -0.4)
+collision_layer = 8
+collision_mask = 20
+monitorable = false
+script = ExtResource("4_hitbox")
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="skin3/blockbench_export/root/arm_left/hand_left/hand_left_mesh/Area3D"]
-transform = Transform3D(1.0000006, 7.4505806e-08, 2.5238842e-07, 6.7055225e-08, 1.0000023, 2.0861626e-07, 2.5425106e-07, -2.9802322e-08, 1.0000012, 0, 0, 0)
+[node name="CollisionShape3D" type="CollisionShape3D" parent="skin3/blockbench_export/root/arm_left/hand_left/hand_left_mesh/LeftHandHitbox" unique_id=444305944]
+transform = Transform3D(1.0000006, 7.4505806e-08, 2.5238842e-07, 6.7055225e-08, 1.0000023, 2.0861626e-07, 2.5425106e-07, -2.9802322e-08, 1.0000012, -5.9604645e-08, 5.9604645e-08, -0.07758793)
 shape = SubResource("BoxShape3D_left_hand")
 
-[node name="Area3D" type="Area3D" parent="skin3/blockbench_export/root/arm_right/hand_right/hand_right_mesh"]
+[node name="RightHandHitbox" type="Area3D" parent="skin3/blockbench_export/root/arm_right/hand_right/hand_right_mesh" parent_id_path=PackedInt32Array(1943459401, 1920127532) index="0" unique_id=2123128039]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.4)
+collision_layer = 8
+collision_mask = 20
+monitorable = false
+script = ExtResource("4_hitbox")
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="skin3/blockbench_export/root/arm_right/hand_right/hand_right_mesh/Area3D"]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="skin3/blockbench_export/root/arm_right/hand_right/hand_right_mesh/RightHandHitbox" unique_id=1904275919]
 shape = SubResource("BoxShape3D_right_hand")
+
+[node name="AttackWindowPlayer" type="AnimationPlayer" parent="." unique_id=990178877]
+callback_mode_process = 0
+libraries/ = ExtResource("6_windows")
 
 [editable path="skin3/blockbench_export"]

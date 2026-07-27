@@ -82,6 +82,11 @@ godot --headless --path . --export-debug Web \
 - Pixel-perfect настройка шрифта `deltarune.ttf` завершена 2026-07-27:
   отключены antialiasing, hinting и subpixel positioning, а `Label3D`
   переведены на nearest-фильтрацию и размеры, кратные нативным `10 px`.
+- Этап 3 с явными collision layers, Hurtbox/Hitbox и animation-driven окнами
+  атак завершён 2026-07-27.
+- Gameplay tuning от 2026-07-28: глубина hitbox обеих рук игрока увеличена
+  с `1.3` до `1.5`, а окно ввода следующего удара в combo увеличено на 10% —
+  с `0.20` до `0.22` секунды.
 
 ## Текущее устройство проекта
 
@@ -153,12 +158,15 @@ pixel_size = Camera3D.size / viewport_height
 ```text
 actors/player/player.tscn
 └── frog_character.tscn
-    ├── CharacterBody3D
-    ├── CollisionShape3D
-    └── frog.glb
-        ├── AnimationPlayer
-        ├── visual hierarchy
-        └── Area3D на каждой руке, добавленные wrapper-сценой
+    └── CharacterBody3D (FighterBody)
+        ├── BodyCollision
+        ├── Hurtbox
+        ├── frog.glb
+        │   ├── AnimationPlayer (physics callback)
+        │   ├── visual hierarchy
+        │   ├── LeftHandHitbox
+        │   └── RightHandHitbox
+        └── AttackWindowPlayer (physics callback)
 ```
 
 Враг:
@@ -166,16 +174,79 @@ actors/player/player.tscn
 ```text
 actors/enemy/enemy.tscn
 └── actors/enemy/duck/duck_character.tscn
-    ├── CharacterBody3D
-    ├── CollisionShape3D
-    └── duck.glb
-        ├── AnimationPlayer
-        ├── visual hierarchy
-        └── Area3D на каждой руке, добавленные wrapper-сценой
+    └── CharacterBody3D (FighterBody)
+        ├── BodyCollision
+        ├── Hurtbox
+        ├── duck.glb
+        │   ├── AnimationPlayer (physics callback)
+        │   ├── visual hierarchy
+        │   ├── LeftHandHitbox
+        │   └── RightHandHitbox
+        └── AttackWindowPlayer (physics callback)
 ```
 
 Обе сцены используют `actors/fighter/fighter.gd` как общую базовую логику. Корневой скрипт
 затем заменяется на `actors/player/player.gd` или `actors/enemy/enemy.gd`.
+
+### Collision model и окна атак
+
+Именованные слои определены в `project.godot`:
+
+```text
+1  World
+2  FighterBody
+3  Hurtbox
+4  Hitbox
+5  Props
+6  KillFloor
+```
+
+Текущие правила layer/mask:
+
+```text
+FighterBody: layer 2, mask 1 | 2 | 5 | 6
+Hurtbox:     layer 3, mask 4
+Hitbox:      layer 4, mask 3 | 5
+World:       layer 1, mask 2
+Props:       layer 5, mask 2
+KillFloor:   layer 6, mask 2
+```
+
+`FighterHurtbox` является типизированной ссылкой на родительский `Fighter`.
+`AttackHitbox` принимает только `FighterHurtbox` и `AttackReceiver3D`.
+Ручной широкий запрос атак из `Fighter` удалён; попадания приходят через
+`Area3D.area_entered` и `Area3D.body_entered`.
+
+Hitbox сохраняет `monitoring = true`, но gameplay-доступность контролируется
+анимируемым свойством `active`. При открытии окна компонент дополнительно
+обрабатывает текущие overlaps, поэтому цель, уже находящаяся внутри Area, не
+теряется. Изменение `active` находится в дискретных property tracks общего
+`actors/combat/attack_windows.tres`:
+
+```text
+attack1: RightHandHitbox, 0.033333–0.133333 s
+attack2: LeftHandHitbox,  0.033333–0.133333 s
+attack3: обе руки,        0.066667–0.233333 s
+```
+
+Импортированный model `AnimationPlayer` и отдельный `AttackWindowPlayer`
+работают в physics callback. `Fighter.hit_bodies` остаётся общей one-hit
+таблицей на всю атаку, поэтому две руки не могут дважды поразить одну цель.
+
+Friendly fire определяется `Fighter.Faction`, а не scene group. Ящики
+реализуют типизированный `AttackReceiver3D`. Domino-механика намеренно оставляет
+отдельный `intersect_shape`, но запрос ограничен слоем `FighterBody` и типом
+`Enemy`.
+
+Регрессионная проверка запускается командой:
+
+```sh
+make test-combat
+```
+
+Она проверяет реальное попадание каждой из трёх атак и границы окна при лимитах
+30, 60 и 120 FPS, physics callback обоих AnimationPlayer и общий one-hit для
+двух рук. Каталог `tests/` исключён из Web export.
 
 ### Остальные сцены
 
@@ -238,18 +309,14 @@ knockback и процедурной походки. Разделение на `F
 
 ## P1. Атаки обрабатываются в другом цикле, чем анимации
 
+Статус: устранено на этапе 3.
+
 ### Текущее поведение
 
-Импортированные `AnimationPlayer` у `duck.glb` и `frog.glb` имеют
-`callback_mode_process = 1`, то есть работают в idle/process-цикле.
-
-Попадания проверяются из `Fighter._physics_process()`:
-
-- `actors/fighter/fighter.gd::_physics_process()`;
-- `actors/fighter/fighter.gd::_check_attack_hits()`.
-
-`_check_attack_hits()` принудительно обновляет трансформы форм и выполняет
-`PhysicsDirectSpaceState3D.intersect_shape()`.
+`Fighter._ready()` переводит импортированный model `AnimationPlayer` в physics
+callback. `AttackWindowPlayer` также работает в physics callback. Ручной
+`Fighter._check_attack_hits()` удалён, а `AttackHitbox` получает overlaps от
+physics server через сигналы `Area3D`.
 
 Проверенные длины импортированных анимаций:
 
@@ -263,7 +330,7 @@ stunned        0.25000 s
 duck charge    0.04167 s
 ```
 
-### Риск
+### Устранённый риск
 
 Анимация рук обновляется на render frames, а пересечение проверяется на physics
 frames. На нестабильном или низком FPS физика может видеть предыдущее положение
@@ -273,12 +340,16 @@ frames. На нестабильном или низком FPS физика мо�
 `force_update_transform()` синхронизирует текущий трансформ с физическим
 сервером, но не продвигает AnimationPlayer до нужного physics timestamp.
 
-### Требуемое изменение
+### Реализованное изменение
 
-- Перевести боевой `AnimationPlayer` или `AnimationTree` в physics callback.
-- Выполнять изменение активного hitbox в том же физическом цикле.
-- Добавить тест попаданий при нескольких значениях render FPS.
-- Проверить быстрые движения рук на tunneling.
+- Model animation и hitbox window используют physics callback.
+- `make test-combat` прогоняет реальные попадания всех трёх атак при лимитах
+  30, 60 и 120 FPS.
+- One-hit registry общий для обеих рук и очищается только при старте следующей
+  атаки.
+- Текущие короткие траектории надёжно покрываются `Area3D`; если скорость или
+  размер персонажей заметно изменятся, следующим усилением должен стать sweep
+  внутри `AttackHitbox`, а не возврат query в `Fighter`.
 
 ### Критерий готовности
 
@@ -288,23 +359,23 @@ frames. На нестабильном или низком FPS физика мо�
 
 ## P1. Hitbox активен всю анимацию
 
+Статус: устранено на этапе 3.
+
 ### Текущее поведение
 
-В `actors/enemy/duck/duck_character.tscn` и `actors/player/frog/frog_character.tscn` на обеих руках
-есть `Area3D` с `CollisionShape3D`.
+Обе wrapper-сцены содержат `FighterHurtbox`, `LeftHandHitbox`,
+`RightHandHitbox` и `AttackWindowPlayer`. Свойство `AttackHitbox.active`
+изменяется дискретными property tracks в `actors/combat/attack_windows.tres`.
+Вне активного окна сигналы Area не наносят урон.
 
-Вместо сигналов Area эти формы используются для ручного `intersect_shape()`.
-Пока `is_attacking == true`, обе руки считаются активными на протяжении всей
-анимации: wind-up, удар и recovery.
-
-### Риск
+### Устранённый риск
 
 - Попадание не привязано к визуальному моменту контакта.
 - Настройка новой атаки требует изменения скрипта или структуры модели.
 - Размер `combo_window` и длина анимации не описывают реальное окно удара.
 - Быстро движущийся hitbox может пропустить цель между physics frames.
 
-### Требуемое изменение
+### Реализованное изменение
 
 Создать явную структуру:
 
@@ -317,17 +388,11 @@ Fighter
     └── RightHandHitbox (Area3D)
 ```
 
-Рекомендуемый вариант:
-
-- `CollisionShape3D.disabled` или `Area3D.monitoring` меняется дискретным
-  property track в боевой анимации;
-- альтернативно call-method track вызывает `open_hitbox()` и
-  `close_hitbox()`;
-- `body_entered`/`area_entered` передаёт цель в один обработчик;
-- список уже поражённых целей хранится в runtime конкретной атаки.
-
-Если `Area3D` недостаточно надёжен для очень быстрых атак, рассмотреть
-`ShapeCast3D` между предыдущим и текущим положением руки.
+- `active` меняется дискретным property track.
+- `area_entered` обрабатывает только `FighterHurtbox`.
+- `body_entered` обрабатывает только `AttackReceiver3D`.
+- При открытии окна также проверяются уже существующие overlaps.
+- Список поражённых целей хранится в `Fighter` и разделяется двумя руками.
 
 ### Критерий готовности
 
@@ -513,21 +578,24 @@ right_hand_hitbox
 
 ## P2. Нет явных collision layers
 
+Статус: устранено на этапе 3.
+
 ### Текущее поведение
 
-Большинство тел и Area используют стандартные layer/mask. После широкого
-physics query объекты фильтруются по группам, `has_method()` и типу.
+В `project.godot` именованы шесть 3D physics layers. Все gameplay-тела и Area
+имеют явные layer/mask. Hitbox получает только Hurtbox и Props, а атака бойца
+больше не использует broad manual query.
 
-### Риск
+### Устранённый риск
 
 - Лишние broad-phase результаты.
 - Hitbox видит мир, props и прочие объекты, которые затем отбрасываются.
 - Правила столкновений нельзя понять из Inspector.
 - `has_method("receive_hit")` и `has_method("hit")` скрывают контракт.
 
-### Требуемое изменение
+### Реализованное изменение
 
-Задать именованные physics layers в `project.godot`, например:
+В `project.godot` заданы слои:
 
 ```text
 1  World
@@ -538,14 +606,15 @@ physics query объекты фильтруются по группам, `has_me
 6  KillFloor
 ```
 
-Точные номера можно изменить, но назначения должны быть документированы.
-
-Рекомендуемые правила:
+Правила:
 
 - Fighter body сталкивается с World, FighterBody и Props.
-- Hitbox проверяет только Hurtbox и, при необходимости, Props.
+- Fighter body также видит KillFloor для текущей slide-collision механики
+  устранения.
+- Hitbox проверяет только Hurtbox и Props.
 - KillFloor не участвует в атакующих запросах.
-- Friendly fire определяется team/faction, а не названием scene group.
+- Friendly fire определяется `Fighter.Faction`, а не названием scene group.
+- Domino-запрос ограничен FighterBody и типом `Enemy`.
 
 ### Критерий готовности
 
@@ -668,7 +737,7 @@ Combo использует:
 [attack1, attack2, attack2, attack3]
 ```
 
-При `combo_window = 0.2` и длинах первых атак 0.25/0.208 секунды окно буфера
+При `combo_window = 0.22` и длинах первых атак 0.25/0.208 секунды окно буфера
 открывается почти сразу. Это может быть намеренной forgiving-механикой, но
 должно быть явно зафиксировано тестом или комментарием.
 
@@ -1049,6 +1118,8 @@ Victory и Game Over создаются как inherited scenes или как о
 Результат: ровно один владелец смены игровой сцены.
 
 ### Этап 3. Collision model и hitbox windows
+
+Статус: завершён.
 
 1. Именовать physics layers.
 2. Добавить Hurtbox и Hitbox.

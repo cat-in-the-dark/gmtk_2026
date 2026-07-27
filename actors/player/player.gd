@@ -2,7 +2,7 @@ extends Fighter
 
 const ATTACK_COMBO: Array[StringName] = [&"attack1", &"attack2", &"attack2", &"attack3"]
 
-@export var combo_window := 0.2
+@export var combo_window := 0.22
 @export var dash_speed := 16.0
 @export var dash_duration := 0.18
 @export var dash_cooldown := 0.3

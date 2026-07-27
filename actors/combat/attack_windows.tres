@@ -1,0 +1,68 @@
+[gd_resource type="AnimationLibrary" format=3 uid="uid://bpfsvothj7e1s"]
+
+[sub_resource type="Animation" id="Animation_attack1"]
+resource_name = "attack1"
+length = 0.25
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("skin3/blockbench_export/root/arm_right/hand_right/hand_right_mesh/RightHandHitbox:active")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.0333333, 0.133333),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 1,
+"values": [false, true, false]
+}
+
+[sub_resource type="Animation" id="Animation_attack2"]
+resource_name = "attack2"
+length = 0.20833
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("skin3/blockbench_export/root/arm_left/hand_left/hand_left_mesh/LeftHandHitbox:active")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.0333333, 0.133333),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 1,
+"values": [false, true, false]
+}
+
+[sub_resource type="Animation" id="Animation_attack3"]
+resource_name = "attack3"
+length = 0.29167
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("skin3/blockbench_export/root/arm_left/hand_left/hand_left_mesh/LeftHandHitbox:active")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.0666667, 0.233333),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 1,
+"values": [false, true, false]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("skin3/blockbench_export/root/arm_right/hand_right/hand_right_mesh/RightHandHitbox:active")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0, 0.0666667, 0.233333),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 1,
+"values": [false, true, false]
+}
+
+[resource]
+_data = {
+&"attack1": SubResource("Animation_attack1"),
+&"attack2": SubResource("Animation_attack2"),
+&"attack3": SubResource("Animation_attack3")
+}

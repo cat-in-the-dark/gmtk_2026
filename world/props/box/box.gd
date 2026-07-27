@@ -1,4 +1,4 @@
-extends StaticBody3D
+extends AttackReceiver3D
 
 @export var shake_duration := 0.18
 @export var shake_distance := 0.1
@@ -13,6 +13,13 @@ func _ready() -> void:
 
 func hit() -> void:
 	shake_time_left = shake_duration
+
+
+func receive_attack(
+	_attacker_position: Vector3,
+	_attack_name: StringName
+) -> void:
+	hit()
 
 
 func _process(delta: float) -> void:
