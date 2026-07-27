@@ -7,7 +7,7 @@
 [ext_resource type="Script" uid="uid://bknjhtpkrcxph" path="res://enemy_spawner.gd" id="5_spawner"]
 [ext_resource type="FontFile" uid="uid://cnrtfdru4342r" path="res://fonts/deltarune.ttf" id="6_7mycd"]
 [ext_resource type="Material" uid="uid://dc14maoctjf85" path="res://floor/floor.tres" id="6_272bh"]
-[ext_resource type="Script" path="res://main.gd" id="7_main"]
+[ext_resource type="Script" uid="uid://c2km480hh21y4" path="res://main.gd" id="7_main"]
 
 [sub_resource type="WorldBoundaryShape3D" id="WorldBoundaryShape3D_lquwl"]
 
@@ -92,6 +92,7 @@ mesh = SubResource("BoxMesh_apnw2")
 
 [node name="EnemyCounter" type="Label3D" parent="level" unique_id=290163380]
 transform = Transform3D(0.70710677, 0.70710677, 3.090862e-08, 0, -4.3711385e-08, 0.9999999, 0.70710677, -0.70710677, -3.090862e-08, 0, 0.0052490234, 0)
+pixel_size = 0.008
 text = "21"
 font = ExtResource("6_7mycd")
 font_size = 640
