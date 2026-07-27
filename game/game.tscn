@@ -1,0 +1,99 @@
+[gd_scene format=3 uid="uid://da8sgbng7wcgu"]
+
+[ext_resource type="Environment" uid="uid://cvx82wuvou4v3" path="res://world/environment/world_env.tres" id="1_0xm2m"]
+[ext_resource type="PackedScene" uid="uid://c363nfghjj6m6" path="res://actors/player/player.tscn" id="1_h2yge"]
+[ext_resource type="PackedScene" uid="uid://cartgfib48y0f" path="res://world/props/box/box.tscn" id="3_h2yge"]
+[ext_resource type="PackedScene" uid="uid://cyscod0sjv43a" path="res://actors/enemy/enemy.tscn" id="4_enemy"]
+[ext_resource type="Script" uid="uid://bknjhtpkrcxph" path="res://game/spawning/enemy_spawner.gd" id="5_spawner"]
+[ext_resource type="FontFile" uid="uid://cnrtfdru4342r" path="res://ui/theme/fonts/deltarune.ttf" id="6_7mycd"]
+[ext_resource type="Material" uid="uid://dc14maoctjf85" path="res://world/arena/floor/floor.tres" id="6_272bh"]
+[ext_resource type="Script" uid="uid://c2km480hh21y4" path="res://game/game.gd" id="7_main"]
+
+[sub_resource type="WorldBoundaryShape3D" id="WorldBoundaryShape3D_lquwl"]
+
+[sub_resource type="StandardMaterial3D" id="FloorMaterial"]
+albedo_color = Color(0.27451, 0.603922, 0.701961, 1)
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_ig7tw"]
+size = Vector2(100, 100)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_apnw2"]
+size = Vector3(12, 8, 12)
+
+[sub_resource type="BoxMesh" id="BoxMesh_apnw2"]
+size = Vector3(12, 8, 12)
+
+[node name="main" type="Node3D" unique_id=134862043]
+script = ExtResource("7_main")
+
+[node name="EnemySpawner" type="Node" parent="." unique_id=5866840]
+script = ExtResource("5_spawner")
+enemy_scene = ExtResource("4_enemy")
+platform_path = NodePath("../level/platform1")
+enemy_counter_path = NodePath("../level/EnemyCounter")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1998564022]
+environment = ExtResource("1_0xm2m")
+
+[node name="Camera3D" type="Camera3D" parent="." unique_id=2067468966]
+transform = Transform3D(1, 0, 0, 0, 0.9063078, 0.4226183, 0, -0.4226183, 0.9063078, 0, 9, 3.93)
+projection = 1
+current = true
+size = 12.0
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=2108176849]
+transform = Transform3D(0.81915206, 0.46984634, -0.32898995, 0, 0.57357645, 0.81915206, 0.57357645, -0.6710101, 0.46984634, 0, 0, 0)
+light_color = Color(0.8, 0.9, 1, 1)
+light_energy = 1.1
+shadow_enabled = true
+directional_shadow_max_distance = 30.0
+
+[node name="Character" parent="." unique_id=1467132198 instance=ExtResource("1_h2yge")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6.2423706, 0, -12.385088)
+dash_speed = 16.0
+dash_duration = 0.18
+dash_cooldown = 0.3
+
+[node name="Floor" type="StaticBody3D" parent="." unique_id=1210423933 groups=["kill_floor"]]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -5, 0)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Floor" unique_id=381346723]
+shape = SubResource("WorldBoundaryShape3D_lquwl")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Floor" unique_id=28330688]
+visible = false
+material_override = SubResource("FloorMaterial")
+mesh = SubResource("PlaneMesh_ig7tw")
+
+[node name="level" type="Node3D" parent="." unique_id=327117667]
+transform = Transform3D(0.70710677, 0, 0.70710677, 0, 1, 0, -0.70710677, 0, 0.70710677, 0, 0, -12)
+
+[node name="box1" parent="level" unique_id=1616515310 instance=ExtResource("3_h2yge")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.5, 0.5, -5.5)
+
+[node name="box4" parent="level" unique_id=458615464 instance=ExtResource("3_h2yge")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.5, 0.5, 5.5)
+
+[node name="box2" parent="level" unique_id=1463229619 instance=ExtResource("3_h2yge")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.5, 0.5, 5.5)
+
+[node name="box3" parent="level" unique_id=614194156 instance=ExtResource("3_h2yge")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.5, 0.5, -5.5)
+
+[node name="platform1" type="StaticBody3D" parent="level" unique_id=1819550088]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -4, 0)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="level/platform1" unique_id=102241234]
+shape = SubResource("BoxShape3D_apnw2")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="level/platform1" unique_id=1513292004]
+material_override = ExtResource("6_272bh")
+mesh = SubResource("BoxMesh_apnw2")
+
+[node name="EnemyCounter" type="Label3D" parent="level" unique_id=290163380]
+transform = Transform3D(0.70710677, 0.70710677, 3.090862e-08, 0, -4.3711385e-08, 0.9999999, 0.70710677, -0.70710677, -3.090862e-08, 0, 0.0052490234, 0)
+pixel_size = 0.008
+text = "21"
+font = ExtResource("6_7mycd")
+font_size = 640
+outline_size = 72

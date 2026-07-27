@@ -4,7 +4,7 @@ A 3D toy game where you can slap enemies out of the platform like in sumo.
 
 Made in solo in 2 days for GMTK-2026. Rate my game here: https://itch.io/jam/gmtk-jam-2026/rate/4828755.
 
-![](./assets/screenshot1.png)
+![](./docs/media/screenshot1.png)
 
 Gameplay video: https://www.youtube.com/watch?v=wsobLPplSrg
 
@@ -23,4 +23,4 @@ Gameplay video: https://www.youtube.com/watch?v=wsobLPplSrg
 
 From Siberia 🇷🇺 with love ❤️ and bears 🐻!
 
-![](./assets/splash.png)
+![](./docs/media/splash.png)

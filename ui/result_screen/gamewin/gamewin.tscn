@@ -1,0 +1,55 @@
+[gd_scene format=3 uid="uid://bk4utacljn5fr"]
+
+[ext_resource type="Environment" uid="uid://cvx82wuvou4v3" path="res://world/environment/world_env.tres" id="1_vrh5d"]
+[ext_resource type="PackedScene" uid="uid://nako1spvyjj2" path="res://actors/enemy/duck/duck.glb" id="2_duck"]
+[ext_resource type="FontFile" uid="uid://cnrtfdru4342r" path="res://ui/theme/fonts/deltarune.ttf" id="2_mbu2q"]
+[ext_resource type="Script" path="res://ui/result_screen/gamewin/gamewin.gd" id="3_script"]
+
+[node name="Gamewin" type="Node3D" unique_id=2048088526]
+script = ExtResource("3_script")
+
+[node name="DuckLeft" parent="." instance=ExtResource("2_duck")]
+transform = Transform3D(0.7071067, 0, -0.7071067, 0, 1, 0, 0.7071067, 0, 0.7071067, -1.5, 5.05, -4)
+
+[node name="DuckCenter" parent="." instance=ExtResource("2_duck")]
+transform = Transform3D(0.7071067, 0, -0.7071067, 0, 1, 0, 0.7071067, 0, 0.7071067, 0, 5.05, -4)
+
+[node name="DuckRight" parent="." instance=ExtResource("2_duck")]
+transform = Transform3D(0.7071067, 0, -0.7071067, 0, 1, 0, 0.7071067, 0, 0.7071067, 1.5, 5.05, -4)
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=935446186]
+environment = ExtResource("1_vrh5d")
+
+[node name="Camera3D" type="Camera3D" parent="." unique_id=765547223]
+transform = Transform3D(1, 0, 0, 0, 0.9063078, 0.4226183, 0, -0.4226183, 0.9063078, 0, 9, 3.93)
+projection = 1
+current = true
+size = 6.0
+
+[node name="GameWinLabel" type="Label3D" parent="." unique_id=1302034898]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 7.8, -4)
+billboard = 1
+text = "VICTORY"
+font = ExtResource("2_mbu2q")
+font_size = 192
+outline_size = 32
+
+[node name="Interface" type="CanvasLayer" parent="." unique_id=831032125]
+
+[node name="RestartLabel" type="Label" parent="Interface" unique_id=239024703]
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -32.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_colors/font_color = Color(0.8, 1, 0.3, 1)
+theme_override_colors/font_outline_color = Color(0.03, 0.05, 0.11, 1)
+theme_override_constants/outline_size = 2
+theme_override_fonts/font = ExtResource("2_mbu2q")
+theme_override_font_sizes/font_size = 10
+text = "Press ESC to restart"
+horizontal_alignment = 1
+vertical_alignment = 1
+metadata/_edit_use_anchors_ = true
